@@ -1,7 +1,7 @@
 #!/bin/bash
 # start in directory 'linguas'
-linguas="./LINGUAS"
 cd ../locale
+linguas="../linguas/LINGUAS"
 IFS=$'\n'
 for lingua in `cat $linguas`; do
   [[ "$lingua" =~ ^#.*$ ]] && continue

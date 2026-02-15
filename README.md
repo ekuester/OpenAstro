@@ -20,6 +20,9 @@ To preserve the great OpenAstro program by Pelle van der Scheer [1] from oblivio
 - Import from astrolog32 (.dat), zet8 dbase (.zds)
 - Ephemeris files for 1200 AD - 2400 AD (included)
 
+### Enhancements
+The published version 1.1.59 is the last release authorized by Pelle van der Scheer and dated from roundabout 2021. Somewhat enhanced versions can be found here. Several deprecations were eliminated (work in progress). The chart window, maximized at start, can be unmaximized without problems with the graphic.<br/>
+BUT...the original ideas of Pelle remained untouched.
 
 ### Discussion
 This program is written in python with use of pyGtk for the Gnome GTK3 environment of Linux. For simplicity the .py ending of the executable is omitted, so start a standalone version with
@@ -44,8 +47,11 @@ python3 setup.py bdist_rpm
 ```
 CAVEAT: The 'setup.py' method is deprecated.
 
+Manual input of events<br/>
+Daylight saving times at natal or other events can cause problems if not entered correctly. OpenAstro uses module 'pytz' which recognized many situations for different locations and timezones. In doubt consulting the program 'astrolog' by Walter D. Pullen is recommended as a very helpful tool.
+
 Printing of Horoscopes<br/>
-OpenAstro stores the horoscope SVGs under '$HOME/.openastro.org/tmp/openAstroChart.svg', which can be converted easily to PDF. Look into directory 'script'. The shell script uses 'chromium --headless' mode and was found in [3]. The built-in conversion is equally effective.
+OpenAstro stores the horoscope SVGs under '$HOME/.openastro.org/tmp/openAstroChart.svg', which can be converted easily to PDF. Look into directory 'script'. The shell script uses 'chromium --headless' mode and was found in [4]. The built-in conversion is equally effective.
 
 Data Bases<br/>
 OpenAstro makes intensive use of data bases in sqlite format 3:<br/>
@@ -108,7 +114,8 @@ Special thanks go to the people in the developer community at StackOverflow. Wit
 [1] The original software website is broken, there exist some "forked" GitHub repositories and a lauchpad folder for Ubuntu:<br/>
 <http://ppa.launchpad.net/pellesimon/ubuntu/pool/main/o/openastro.org/><br/>
 [2] <https://pypi.org/project/pyswisseph>\
-[3] <https://gist.github.com/s417-lama/84bf66de1096c4587e8187092fb41684><br/>
+[3] <https://www.astrolog.org/><br/>
+[4] <https://gist.github.com/s417-lama/84bf66de1096c4587e8187092fb41684><br/>
 
 ### Disclaimer
 Use the program for what purpose you like, but hold in mind, that there is no guaranty for any harm it will cause to your hard- or software. It was your decision to use this piece of software.

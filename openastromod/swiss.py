@@ -16,8 +16,12 @@
     You should have received a copy of the GNU General Public License
     along with OpenAstro.org.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import os.path, sys, datetime, math
 import swisseph as swe
+
+VERBOSE=False
+
 #swiss ephemeris files directory
 swissDir = os.path.join(sys.prefix,'share','swisseph')
 #local swiss ephemeris files directory
@@ -33,18 +37,15 @@ class ephData:
 	def __init__(self,year,month,day,hour,geolon,geolat,altitude,planets,zodiac,openastrocfg,houses_override=None):
 		#ephemeris path (default "/usr/share/swisseph:/usr/local/share/swisseph")
 		swe.set_ephe_path(ephe_path)
-		
 		#basic location		
 		self.jul_day_UT=swe.julday(year,month,day,hour)
 		self.geo_loc = swe.set_topo(geolon,geolat,altitude)
-
 		#output variables
 		self.planets_sign = list(range(len(planets)))
 		self.planets_degree = list(range(len(planets)))
 		self.planets_degree_ut = list(range(len(planets)))
 		self.planets_info_string = list(range(len(planets)))
 		self.planets_retrograde = list(range(len(planets)))
-		
 		#iflag
 		"""
 		#define SEFLG_JPLEPH         1L     // use JPL ephemeris
@@ -73,30 +74,27 @@ class ephData:
 			iflag += swe.FLG_TOPOCTR
 		elif(openastrocfg['postype']=="helio"):
 			iflag += swe.FLG_HELCTR
-
 		#sidereal
 		if(openastrocfg['zodiactype']=="sidereal"):
 			iflag += swe.FLG_SIDEREAL
 			mode="SIDM_"+openastrocfg['siderealmode']
 			swe.set_sid_mode(getattr(swe,mode))
-
 		#compute a planet (longitude,latitude,distance,long.speed,lat.speed,speed)
 		for i in range(23):
-			ret_flag = swe.calc_ut(self.jul_day_UT,i,iflag)
+			res, flag = swe.calc_ut(self.jul_day_UT,i,iflag)
 			for x in range(len(zodiac)):
 				deg_low=float(x*30)
 				deg_high=float((x+1)*30)
-				if ret_flag[0] >= deg_low:
-					if ret_flag[0] <= deg_high:
+				if res[0] >= deg_low:
+					if res[0] <= deg_high:
 						self.planets_sign[i]=x
-						self.planets_degree[i] = ret_flag[0] - deg_low
-						self.planets_degree_ut[i] = ret_flag[0]
+						self.planets_degree[i] = res[0] - deg_low
+						self.planets_degree_ut[i] = res[0]
 						#if latitude speed is negative, there is retrograde
-						if ret_flag[3] < 0:						
+						if res[3] < 0:						
 							self.planets_retrograde[i] = True
 						else:
 							self.planets_retrograde[i] = False
-
 		#available house systems:
 		"""
 		hsys= 		‘P’     Placidus
@@ -117,14 +115,14 @@ class ephData:
 		#check for polar circle latitude < -66 > 66
 		if houses_override:
 			self.jul_day_UT = swe.julday(houses_override[0],houses_override[1],houses_override[2],houses_override[3])
-			
 		if geolat > 66.0:
 			geolat = 66.0
-			print("polar circle override for houses, using 66 degrees")
+			if VERBOSE:
+				print("polar circle override for houses, using 66 degrees")
 		elif geolat < -66.0:
 			geolat = -66.0
-			print("polar circle override for houses, using -66 degrees")
-
+			if VERBOSE:
+				print("polar circle override for houses, using -66 degrees")
 		#sidereal houses
 		if(openastrocfg['zodiactype']=="sidereal"):
 			sh = swe.houses_ex(self.jul_day_UT,geolat,geolon,openastrocfg['houses_system'].encode("ascii"),swe.FLG_SIDEREAL)
@@ -132,24 +130,21 @@ class ephData:
 			sh = swe.houses(self.jul_day_UT,geolat,geolon,openastrocfg['houses_system'].encode("ascii"))
 
 		self.houses_degree_ut = list(sh[0])
-
 		#arabic parts
 		sun,moon,asc = self.planets_degree_ut[0],self.planets_degree_ut[1],self.houses_degree_ut[0]
 		dsc,venus = self.houses_degree_ut[6],self.planets_degree_ut[3]	
-
 		#offset
 		offset = moon - sun
-		
+
 		#if planet degrees is greater than 360 substract 360 or below 0 add 360
 		for i in range(len(self.houses_degree_ut)):
 			#add offset
 			#self.houses_degree_ut[i] += offset
-			
+
 			if self.houses_degree_ut[i] > 360.0:
 				self.houses_degree_ut[i] = self.houses_degree_ut[i] - 360.0
 			elif self.houses_degree_ut[i] < 0.0:
 				self.houses_degree_ut[i] = self.houses_degree_ut[i] + 360.0		
-		
 
 		self.houses_degree = list(range(len(self.houses_degree_ut)))
 		self.houses_sign = list(range(len(self.houses_degree_ut)))
@@ -162,7 +157,7 @@ class ephData:
 						self.houses_sign[i]=x
 						self.houses_degree[i] = self.houses_degree_ut[i] - deg_low
 						
-		
+
 		#mean apogee
 		bm=self.planets_degree_ut[12]
 		#mean north node
@@ -184,7 +179,7 @@ class ephData:
 		#print ps
 		#print moon
 		#print pl
-		
+
 		c= 1.517 * math.sin(2*math.radians(sun-mn))
 		c+= -0.163 * math.sin(math.radians(sun-ps))
 		c+= -0.128 * math.sin(2*math.radians(moon-sun))
@@ -202,21 +197,25 @@ class ephData:
 		c+= 0.005 * math.sin(math.radians(3*moon-pl-2*mn))
 		c+= -0.005 * math.sin(math.radians(3*moon-pl-2*sun))
 		#print c
-		
+
 		sbm=sun-bm
 		if sbm < 0: sbm += 360
-		if sbm > 180.0: sbm -= 180
-		print("sun %s black moon %s sun-bm %s=%s" % (sun,bm,sun-bm,sbm))
-
+		if sbm > 180.0:
+			sbm -= 180
+		if VERBOSE:
+			print("sun %s black moon %s sun-bm %s=%s" % (sun,bm,sun-bm,sbm))
 		q=12.333
 		if sbm < 60.0:
-			print('sbm<60')
+			if VERBOSE:
+				print('sbm<60')
 			c= q * math.sin(1.5*math.radians(sbm))
 		elif sbm > 120.0:
-			print('sbm>120')
+			if VERBOSE:
+				print('sbm>120')
 			c= q * math.cos(1.5*math.radians(sbm))
 		else:
-			print('sbm 60-120')
+			if VERBOSE:
+				print('sbm 60-120')
 			c= -q * math.cos(3.0*math.radians(sbm))
 
 		true_lilith=c
@@ -263,7 +262,7 @@ class ephData:
 		"""
 		c+= - 0.117 * math.sin(math.radians(sun-ps))
 		#print c
-		
+
 		#c+= x * -0.163 * math.sin(math.radians(sun-ps))
 		#c+= x * -0.128 * math.sin(2*math.radians(moon-sun))
 		#c+= x * 0.120 * math.sin(2*math.radians(moon-bm))
@@ -279,7 +278,6 @@ class ephData:
 		#c+= x * -0.007 * math.sin(math.radians(2*moon+pl-3*sun))
 		#c+= x * 0.005 * math.sin(math.radians(3*moon-pl-2*bm))
 		#c+= x * -0.005 * math.sin(math.radians(3*moon-pl-2*sun))
-		
 
 		#compute additional points and angles
 		#list index 23 is asc, 24 is Mc, 25 is Dsc, 26 is Ic
@@ -287,7 +285,7 @@ class ephData:
 		self.planets_degree_ut[24] = self.houses_degree_ut[9]
 		self.planets_degree_ut[25] = self.houses_degree_ut[6]
 		self.planets_degree_ut[26] = self.houses_degree_ut[3]
-		
+
 		#list index 27 is day pars
 		self.planets_degree_ut[27] = asc + (moon - sun)
 		#list index 28 is night pars
@@ -321,16 +319,17 @@ class ephData:
 						self.planets_sign[i]=x
 						self.planets_degree[i] = self.planets_degree_ut[i] - deg_low
 						self.planets_retrograde[i] = False
-
 		#lunar phase, anti-clockwise degrees between sun and moon
 		ddeg=moon-sun
 		if ddeg<0: ddeg+=360.0
 		step=360.0 / 28.0
-		print(moon,sun,ddeg)
+		if VERBOSE:
+			print(moon,sun,ddeg)
 		for x in range(28):
 			low=x*step
 			high=(x+1)*step
-			if ddeg >= low and ddeg < high: mphase=x+1
+			if ddeg >= low and ddeg < high:
+				mphase=x+1
 		sunstep=[0,30,40,50,60,70,80,90,120,130,140,150,160,170,180,210,220,230,240,250,260,270,300,310,320,330,340,350]
 		for x in range(len(sunstep)):
 			low=sunstep[x]
@@ -342,15 +341,16 @@ class ephData:
 					"moon_phase":mphase,
 					"sun_phase":sphase
 		}
-		
 		#close swiss ephemeris
 		swe.close()
 
-def years_diff(y1, m1, d1, h1 , y2, m2, d2, h2):
+def years_diff(y1, m1, d1, h1, y2, m2, d2, h2):
+		#GREG_CAL is SE_GREG_CAL in swephexp.h, defined as 1
 		swe.set_ephe_path(ephe_path)
-		jd1 = swe.julday(y1,m1,d1,h1)
-		jd2 = swe.julday(y2,m2,d2,h2)
-		jd = jd1 + swe._years_diff(jd1, jd2)
-		#jd = jd1 + ( (jd2-jd1) / 365.248193724 )
-		y, mth, d, h, m, s = swe._revjul(jd, swe.GREG_CAL)
-		return datetime.datetime(y,mth,d,h,m,s)
+		jd1 = swe.julday(y1,m1,d1,h1,swe.GREG_CAL)
+		jd2 = swe.julday(y2,m2,d2,h2,swe.GREG_CAL)
+		#calculate years between julian dates
+		jd = jd1 + (jd2 - jd1)/365.25
+		# convert back
+		return swe.revjul(jd,swe.JUL_CAL)
+
