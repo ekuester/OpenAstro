@@ -45,8 +45,7 @@ if "--local" in sys.argv:
 	LOCAL = True
 #for debugging set to True
 DEBUG = False
-with open("VERSION", "r") as f:
-	version = f.read()
+VERSION = "1.1.64"
 #radius of zodiac
 RADIUS = 240
 # default dimensions of SVG viewBox, ratio shouls be near sqrt(2) = 1.41421356
@@ -121,7 +120,7 @@ except IOError as err:
 """ config class """
 class openAstroCfg:
 	def __init__(self):
-		self.version = version
+		self.version = VERSION
 		dprint("-------------------------------")
 		dprint('  OpenAstro.org '+str(self.version))
 		dprint("-------------------------------")
@@ -3835,7 +3834,7 @@ class mainWindow:
 		about.connect("close", lambda w,e: about.destroy())
 		about.set_program_name("Gtk+ OpenAstro.org - Open Source Astrology")
 		about.set_size_request(480, -1)
-		about.set_version("Version " + version)
+		about.set_version("Version " + cfg.version)
 		about.set_authors(["Pelle van der Scheer, Amsterdam / The Netherlands"])
 		documenters = ["Erich Küster, Krefeld / Nortrhine-Westfalia / Germany"]
 		about.set_copyright("Copyright © 2012-2026 Pelle van der Scheer. All rights reserved.")
