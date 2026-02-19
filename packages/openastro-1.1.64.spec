@@ -70,8 +70,8 @@ rm -rf ${RPM_BUILD_DIR}/%{alias}-%{version}
 %{python3_sitelib}/*
 
 %changelog
-* Thu Feb 19 2025 Erich Kuester <erich.kuester«arcor.de> - 1.1.64-1
-- added README, built for pyswisseph-2.00.01
+* Thu Feb 19 2026 Erich Kuester <erich.kuester«arcor.de> - 1.1.64-1
+- added README, built for pyswisseph-2.10.3.2
 * Thu Dec 25 2025 Erich Kuester <erich.kuester«arcor.de> - 1.1.59-2
 - added README, built for pyswisseph-2.00.01
 * Sun Dec 21 2025 Erich Kuester <erich.kuester«arcor.de> - 1.1.59-1

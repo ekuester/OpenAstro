@@ -52,7 +52,7 @@ Daylight saving times at natal or other events can cause problems if not entered
 
 ```
 # display on X Window, change size of chart graphic for hiDPI
-$ ./astrolog -i ./charts/WP.HOR -XS 300 Xw 1500
+$ ./astrolog -i ./charts/WP.dat -XS 300 Xw 1500
 ```
 
 Printing of Horoscopes<br/>
