@@ -17,13 +17,11 @@
     along with OpenAstro.org.  If not, see <http://www.gnu.org/licenses/>.
 """
 from __future__ import with_statement
-
 from xml.dom.minidom import parseString
 
-from codecs import EncodedFile
-
 def _getText(nodelist):
-	"""Internal function to return text from nodes
+	"""
+	 Internal function to return text from nodes
 	"""
 	rc = ""
 	for node in nodelist:
@@ -112,27 +110,38 @@ def getSkylendar(filename):
 def getAstrolog32(filename):
 	"""
 	examples:
-@0102  ; Astrolog chart info.
-/qb 6 23 1972  3:00:00 ST -1:00   5:24:00E 43:18:00N
-/zi "Zinedine Zidane" "Marseille"	
-@0102  ; Astrolog32 chart info.
-
 ; Date is in American format: month day year.
+; normal time has ST, daylight saving time has DT
 
+@0102  ; Astrolog chart info.
+/qb  6 23 1972  3:00:00 ST -1:00   5:24:00E 43:18:00N
+/zi "Zinedine Zidane" "Marseille"
+
+@0102  ; Astrolog32 chart info.
 /qb 10 27 1980 10:20:00 ST -1:00  14:39'00E 50:11'00N
-/zi "Honzik" "Brandys nad Labem"	
+/zi "Honzik" "Brandys nad Labem"
+
+; newer versions use 3-letter abbreviation for month
+; added Feb 19 2026 EK
 	"""
 	d={}
-	h=open(filename)
-	f=EncodedFile(h,"utf-8","latin-1")
-	for line in f.readlines():
+	lines = []
+	with open(filename, "r") as f:
+		for line in f:
+			lines.append(line)
+	for line in lines:
 		if line[0:3] == "/qb":
 			s0=line.strip().split(' ')
 			s=[]
 			for j in range(len(s0)):
 				if s0[j]!='':
 					s.append(s0[j])
-			d['month']=s[1]
+			m = s[1]
+			#month special
+			if s[1].isalpha():
+				mon = {"Jan":'1', "Feb":'2', "Mar":'3', "Apr":'4', "May":'5', "Jun":'6', "Jul":'7', "Aug":'8', "Sep":'9', "Oct":'10', "Nov":'11', "Dec":'12'}
+				m = mon[s[1]]
+			d['month']=m
 			d['day']=s[2]
 			d['year']=s[3]
 			d['hour'],d['minute'],d['second']=0,0,0
@@ -143,12 +152,19 @@ def getAstrolog32(filename):
 					d['minute'] = s[4].split(':')[1]
 				if x == 2:
 					d['second'] = s[4].split(':')[2]
-
+			#daylight saving
+			d['daylight']=False
+			if s[5] == 'DT':
+				d['daylight']=True
 			#timezone
-			tz=s[6].split(':')
-			d['timezone']=float(tz[0])+float(tz[1])/60.0
-			if float(tz[0]) < 0:
-				d['timezone']=d['timezone']/-1.0
+			h,m=s[6].split(':')
+			m=m[0:2]
+			tz=abs(float(h))
+			mn=float(m)/60.0
+			tz+=mn
+			d['timezone']=tz
+			#if float(tz[0]) < 0:
+			#	d['timezone']=d['timezone']/-1.0
 			#longitude
 			lon=s[7].split(':')
 			lon.append(lon[-1][-1])
@@ -167,7 +183,6 @@ def getAstrolog32(filename):
 				d['latitude']+=float(lon[2])/3600.0
 			if lon[-1] == 'S':
 				d['latitude'] = d['latitude']/-1.0			
-			
 		if line[0:3] == "/zi":
 			s0=line.strip().split('"')
 			s=[]
@@ -176,6 +191,5 @@ def getAstrolog32(filename):
 					s.append(s0[j])
 			d['name']=s[1]
 			d['location']=s[2]
-	f.close()
 	return [d]
 

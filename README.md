@@ -30,7 +30,7 @@ This program is written in python with use of pyGtk for the Gnome GTK3 environme
 ```
 # execute once to make program executable
 chmod +x ./openastro
-# start program as standalone
+# start program as standaloneCopyright 2020 ZCopyright 2020 Zeitverschiebung.orgCopyright 2020 Zeitverschiebung.orgCopyright 2020 Zeitverschiebung.orgCopyright 2020 Zeitverschiebung.orgeitverschiebung.org
 ./openastro --local
 ```
 The program is localized in 25 languages in folder 'locale'.
@@ -48,7 +48,12 @@ python3 setup.py bdist_rpm
 CAVEAT: The 'setup.py' method is deprecated.
 
 Manual input of events<br/>
-Daylight saving times at natal or other events can cause problems if not entered correctly. OpenAstro uses module 'pytz' which recognized many situations for different locations and timezones. In doubt consulting the program 'astrolog' by Walter D. Pullen is recommended as a very helpful tool.
+Daylight saving times at natal or other events can cause problems if not entered correctly. OpenAstro uses module 'pytz' which recognizes many situations for different locations and timezones. For that it is crucial to specify the right city in the timezone (Brussels and Berlin, for instance, have the same timezone, but Belgium and Germany differ in some years in Daylight saving). In doubt consulting the program 'astrolog' by Walter D. Pullen [4] is recommended as a very helpful tool for cross-checking.
+
+```
+# display on X Window, change size of chart graphic for hiDPI
+$ ./astrolog -i ./charts/WP.HOR -XS 300 Xw 1500
+```
 
 Printing of Horoscopes<br/>
 OpenAstro stores the horoscope SVGs under '$HOME/.openastro.org/tmp/openAstroChart.svg', which can be converted easily to PDF. Look into directory 'script'. The shell script uses 'chromium --headless' mode and was found in [4]. The built-in conversion is equally effective.
@@ -108,7 +113,7 @@ sqlite> SELECT * FROM event_natal WHERE id=1;
 Sole ownership of this fine piece of software belongs to Pelle van der Scheer. 
 
 ### Acknowledgements:
-Special thanks go to the people in the developer community at StackOverflow. Without their help and answered questions at <https://stackoverflow.com/> and affiliate sites this work would not be possible.
+Special thanks go to the people in the developer community at StackOverflow. Without their help and answered questions at <https://stackoverflow.com/> and affiliate sites this work would not be possible. BTW Google Translator is your friend, really.
 
 ### Literature
 [1] The original software website is broken, there exist some "forked" GitHub repositories and a lauchpad folder for Ubuntu:<br/>

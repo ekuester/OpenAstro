@@ -1,8 +1,8 @@
-%global revision 2
+%global revision 1
 %global alias openastro.org
 
 Name:           OpenAstro
-Version:        1.1.59
+Version:        1.1.64
 Release:        1.11
 Summary:        Astrology charts
 License:        GPLv3+
@@ -59,7 +59,7 @@ rm -rf $RPM_BUILD_ROOT
 rm -rf ${RPM_BUILD_DIR}/%{alias}-%{version}
 
 %files
-%license COPYING
+%license LICENSE
 %doc README.md
 %{_bindir}/openastro
 %{_datadir}/applications/openastro.desktop
@@ -70,6 +70,8 @@ rm -rf ${RPM_BUILD_DIR}/%{alias}-%{version}
 %{python3_sitelib}/*
 
 %changelog
+* Thu Feb 19 2025 Erich Kuester <erich.kuester«arcor.de> - 1.1.64-1
+- added README, built for pyswisseph-2.00.01
 * Thu Dec 25 2025 Erich Kuester <erich.kuester«arcor.de> - 1.1.59-2
 - added README, built for pyswisseph-2.00.01
 * Sun Dec 21 2025 Erich Kuester <erich.kuester«arcor.de> - 1.1.59-1
