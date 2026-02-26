@@ -2,7 +2,7 @@
 %global alias openastro.org
 
 Name:           OpenAstro
-Version:        1.1.64
+Version:        1.1.66
 Release:        1.11
 Summary:        Astrology charts
 License:        GPLv3+
@@ -49,6 +49,7 @@ EOF
 cp -a locale $RPM_BUILD_ROOT%{_datadir}/
 rm -fr $RPM_BUILD_ROOT%{_datadir}/%{alias}/locale
 cp -a data/*.* $RPM_BUILD_ROOT%{_datadir}/%{alias}/
+cp -a about.xpm COMMENTS LICENSE $RPM_BUILD_ROOT%{_datadir}/%{alias}/
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/pixmaps/
 install -m 644 icons/openastro.svg $RPM_BUILD_ROOT%{_datadir}/pixmaps/
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/swisseph/
@@ -63,13 +64,15 @@ rm -rf ${RPM_BUILD_DIR}/%{alias}-%{version}
 %doc README.md
 %{_bindir}/openastro
 %{_datadir}/applications/openastro.desktop
-%{_datadir}/openastro.org
+%{_datadir}/openastro.org/*
 %{_datadir}/pixmaps/*.svg
 %{_datadir}/swisseph/*.*
 %{_datadir}/locale/*
 %{python3_sitelib}/*
 
 %changelog
+* Tue Feb 24 2026 Erich Kuester <erich.kuester«arcor.de> - 1.1.66-1
+- some dprecations removed, displaying optimized, general revision
 * Thu Feb 19 2026 Erich Kuester <erich.kuester«arcor.de> - 1.1.64-1
 - added README, built for pyswisseph-2.10.3.2
 * Thu Dec 25 2025 Erich Kuester <erich.kuester«arcor.de> - 1.1.59-2
