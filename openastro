@@ -151,6 +151,7 @@ class openAstroCfg:
 		self.iconWindow = os.path.join(icons, 'openastro.svg')
 		self.iconAspects = os.path.join(icons, 'aspects')
 		#basic files
+		self.about = os.path.join(DATADIR, 'about.xpm')
 		self.comments = os.path.join(DATADIR, 'COMMENTS')
 		self.license = os.path.join(DATADIR, 'LICENSE')
 		self.tempfilename = os.path.join(self.tmpdir,"openAstroChart.svg")
@@ -3732,7 +3733,7 @@ class mainWindow:
 
 	def aboutInfo(self, widget):
 		about = Gtk.AboutDialog(transient_for = self.window, modal = True)
-		about.set_logo(GdkPixbuf.Pixbuf.new_from_file("about.xpm"));
+		about.set_logo(GdkPixbuf.Pixbuf.new_from_file(cfg.about));
 		about.connect("response", lambda w,e: about.destroy())				
 		about.connect("close", lambda w,e: about.destroy())
 		about.set_program_name("Gtk+ OpenAstro.org - Open Source Astrology")

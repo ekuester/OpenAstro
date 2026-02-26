@@ -49,7 +49,7 @@ EOF
 cp -a locale $RPM_BUILD_ROOT%{_datadir}/
 rm -fr $RPM_BUILD_ROOT%{_datadir}/%{alias}/locale
 cp -a data/*.* $RPM_BUILD_ROOT%{_datadir}/%{alias}/
-cp -a about.xpm COMMENTS LICENSE $RPM_BUILD_ROOT%{_datadir}/%{alias}/
+cp -a 'about.xpm' COMMENTS LICENSE $RPM_BUILD_ROOT%{_datadir}/%{alias}/
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/pixmaps/
 install -m 644 icons/openastro.svg $RPM_BUILD_ROOT%{_datadir}/pixmaps/
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/swisseph/
