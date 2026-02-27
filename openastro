@@ -37,7 +37,9 @@ from gi import require_version
 require_version('Rsvg', '2.0')
 require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Rsvg, cairo
+from gi.repository.GdkPixbuf import Pixbuf, InterpType
 
+#local modukes
 from openastromod import zonetab, geoname, importfile, dignities, swiss as ephemeris
 
 LOCAL = False
@@ -45,7 +47,7 @@ if "--local" in sys.argv:
 	LOCAL = True
 #for debugging set to True
 DEBUG = False
-VERSION = "1.1.66"
+VERSION = "1.1.68"
 #radius of zodiac
 RADIUS = 240
 # default dimensions of SVG viewBox, ratio shouls be near sqrt(2) = 1.41421356
@@ -1558,8 +1560,11 @@ dt_new.year,dt_new.month,dt_new.day,dt_new.hour,dt_new.minute,dt_new.second))
 		#orb_color_X
 		for i in range(len(self.aspects)):
 			td['orb_color_%s'%(self.aspects[i]['degree'])]=self.colors["aspect_%s" %(self.aspects[i]['degree'])]
-		#config
-		td['cfgZoom']=str(self.zoom)
+		#config zoom from versions v1.1.68 on
+		td['cfgZoom']="1.0"
+		#zoom in earlier versions below 1.1.68
+		#td['cfgZoom']=str(self.zoom)
+		#other configs
 		td['cfgRotate']=rotate
 		td['cfgTranslate']=translate
 		#functions
@@ -3143,13 +3148,19 @@ class mainWindow:
 		# Create a MenuBar
 		menubar = self.uimanager.get_widget('/MenuBar')
 		box.pack_start(menubar, expand=False, fill=True, padding=0)
+		viewport = Gtk.Viewport()
 		# Draw svg pixbuf
 		chart_name = openAstro.makeSVG()
-		#box = Gtk.Box(spacing=0)
+		#drawing_area to render SVG
 		self.draw = viewSVG(chart_name)
 		self.draw.window_state = False
-		self.window.connect('window-state-event', self.draw.on_window_state_event)
 		self.window.unmaximize()
+		self.window.connect('window-state-event', self.draw.on_window_state_event)
+		scrolledwindow = Gtk.ScrolledWindow()
+		# Pack
+		viewport.add(self.draw)
+		scrolledwindow.add(viewport)
+		box.pack_start(scrolledwindow, True, True, 0)
 		"""
 		self.draw = drawSVG()
 		self.draw.setSVG(self.tempfilename, CHARTX, CHARTY)
@@ -3160,7 +3171,7 @@ class mainWindow:
 		scrolled_window.add(self.draw)
 		scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
 		"""
-		box.pack_start(self.draw, expand=True, fill=True, padding=0)
+		#box.pack_start(viewport, expand=True, fill=True, padding=0)
 		self.window.add(box)
 		self.window.resize(openAstro.width, openAstro.height)
 		self.window.show_all()
@@ -3254,6 +3265,23 @@ class mainWindow:
 		return
 
 	def zoom(self, action, current):
+		""" check for zoom level and draw """
+		if current.get_name() == 'z80':
+			self.draw.ratio = 0.8
+		elif current.get_name() == 'z150':
+			self.draw.ratio = 1.5
+		elif current.get_name() == 'z200':
+			self.draw.ratio = 2.0
+		else:
+			self.draw.ratio = 1.0
+		#redraw svg
+		self.draw.scale_image()
+		self.draw.queue_draw()
+		return
+
+	"""
+	### only versions before v1.1.68 ###
+	def zoom(self, action, current):
 		#check for zoom level
 		if current.get_name() == 'z80':
 			openAstro.zoom=0.8
@@ -3268,6 +3296,7 @@ class mainWindow:
 		self.draw.setup_svg(chart_name)
 		self.draw.queue_draw()
 		return
+"""
 
 	def doExport(self, widget):
 		chooser = Gtk.FileChooserDialog(title = None,parent = self.window,action = Gtk.FileChooserAction.SAVE)
@@ -5915,7 +5944,61 @@ VALUES (null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
 		dprint('Quitting program')
 		Gtk.main_quit()
 
-""" https://gabmus.org/posts/create_an_auto-resizing_image_widget_with_gtk3_and_python/ """
+""" source: https://stackoverflow.com/q/58685222 """
+class viewSVG(Gtk.DrawingArea):
+	def __init__(self, path, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.connect("draw", self.on_draw)
+		self.setup_svg(path)
+
+	def setup_svg(self, path):
+		self.ratio = 1.0
+		with open(path, 'r') as file:
+			svg = file.read()
+		loader = GdkPixbuf.PixbufLoader()
+		loader.write(svg.encode())
+		loader.close()
+		self.pixbuf = loader.get_pixbuf()
+		self.original_image = self.pixbuf
+		self.displayed_image = self.pixbuf
+		self.set_size_request(
+			self.displayed_image.get_width(),
+			self.displayed_image.get_height())
+
+	def on_button_zoom_in_clicked(self, widget):
+		self.ratio += 0.05
+		self.scale_image()
+		self.queue_draw()
+
+	def on_button_zoom_out_clicked(self, widget):
+		self.ratio -= 0.05
+		if self.ratio < 0.05:
+			self.ratio = 0.05
+			return
+		self.scale_image()
+		self.queue_draw()
+
+	def scale_image(self):
+		w = self.original_image.get_width() * self.ratio
+		h = self.original_image.get_height() * self.ratio
+		# pixbuf interpolation type
+		self.displayed_image = self.original_image.scale_simple(w, h, InterpType.BILINEAR)
+
+	def on_draw(self, drawable, cairo_context):
+		pixbuf = self.displayed_image	
+		# New line. Get DrawingArea's window and resize it.
+		drawable.get_window().resize(pixbuf.get_width(), pixbuf.get_height())		   
+		drawable.set_size_request(pixbuf.get_width(), pixbuf.get_height())
+		Gdk.cairo_set_source_pixbuf(cairo_context, pixbuf, 0, 0)
+		cairo_context.paint()
+
+	""" source: https://stackoverflow.com/questions/38113876 """
+	def on_window_state_event(self, widget, event):
+		self.window_state = bool(event.new_window_state & Gdk.WindowState.MAXIMIZED)
+		self.queue_draw()
+
+"""
+### source: https://gabmus.org/posts/create_an_auto-resizing_image_widget_with_gtk3_and_python/ ###
 class viewSVG(Gtk.DrawingArea):
 	def __init__(self, path, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -5954,9 +6037,10 @@ class viewSVG(Gtk.DrawingArea):
 		height = self.get_useful_height()
 		self.set_size_request(-1, height)
 
-	""" https://stackoverflow.com/questions/38113876/how-to-make-a-gtk3-window-full-screen """
+	### source: https://stackoverflow.com/questions/38113876 ###
 	def on_window_state_event(self, widget, event):
 		self.window_state = bool(event.new_window_state & Gdk.WindowState.MAXIMIZED)
+"""
 """
 #cairo svg class
 class drawSVG(Gtk.DrawingArea):

@@ -2,7 +2,7 @@
 %global alias openastro.org
 
 Name:           OpenAstro
-Version:        1.1.66
+Version:        1.1.68
 Release:        1.11
 Summary:        Astrology charts
 License:        GPLv3+

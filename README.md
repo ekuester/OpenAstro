@@ -21,7 +21,7 @@ To preserve the great OpenAstro program by Pelle van der Scheer [1] from oblivio
 - Ephemeris files for 1200 AD - 2400 AD (included)
 
 ### Enhancements
-The published version 1.1.59 is the last release authorized by Pelle van der Scheer and dated from roundabout 2021. Somewhat enhanced versions can be found here. Several deprecations were eliminated (work in progress). The chart window, maximized at start, can be unmaximized without problems with the graphic.<br/>
+The published version 1.1.59 is the last release authorized by Pelle van der Scheer and dated from roundabout 2021. Somewhat enhanced versions can be found here. Several deprecations were eliminated (work in progress). The chart window is shown in a scrolling window, which can be maximized. Zoom levels are available in four variants..<br/>
 BUT...the original ideas of Pelle remained untouched.
 
 ### Discussion
@@ -30,7 +30,7 @@ This program is written in python with use of pyGtk for the Gnome GTK3 environme
 ```
 # execute once to make program executable
 chmod +x ./openastro
-# start program as standaloneCopyright 2020 ZCopyright 2020 Zeitverschiebung.orgCopyright 2020 Zeitverschiebung.orgCopyright 2020 Zeitverschiebung.orgCopyright 2020 Zeitverschiebung.orgeitverschiebung.org
+# start program as standalone
 ./openastro --local
 ```
 The program is localized in 25 languages in folder 'locale'.
@@ -48,7 +48,7 @@ python3 setup.py bdist_rpm
 CAVEAT: The 'setup.py' method is deprecated.
 
 Manual input of events<br/>
-Daylight saving times at natal or other events can cause problems if not entered correctly. OpenAstro uses module 'pytz' which recognizes many situations for different locations and timezones. For that it is crucial to specify the right city in the timezone (Brussels and Berlin, for instance, have the same timezone, but Belgium and Germany differ in some years in Daylight saving). In doubt consulting the program 'astrolog' by Walter D. Pullen [4] is recommended as a very helpful tool for cross-checking.
+Daylight saving times at natal or other events can cause problems if not entered correctly. OpenAstro uses module 'pytz' which recognizes many situations for different locations and timezones. For that it is crucial to specify the right city in the timezone (Brussels and Berlin, for instance, have the same timezone, but Belgium and Germany differ in some years in Daylight Saving). In doubt consulting the program 'astrolog' by Walter D. Pullen [4] is recommended as a very helpful tool for cross-checking.
 
 ```
 # display on X Window, change size of chart graphic for hiDPI
