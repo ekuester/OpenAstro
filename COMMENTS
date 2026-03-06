@@ -1,11 +1,11 @@
 To preserve the great OpenAstro program by Pelle van der Scheer
 from oblivion, find it here slightly modified and adapted.
 The former separate files from 'openastro-data' are now fully integrated.
-Working with pyswisseph-2.10.3
+Now working with pyswisseph-2.10.3
 
 The program is written in python with use of pyGtk
 for the Gnome GTK3 environment of Linux.
 
 In continuation:
 Erich Küster, Krefeld / Northrhine-Westfalia / Germany
-Last Edit: Friday, February 27, 2026
+Last Edit: Friday, March 5, 2026

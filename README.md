@@ -21,8 +21,8 @@ To preserve the great OpenAstro program by Pelle van der Scheer [1] from oblivio
 - Ephemeris files for 1200 AD - 2400 AD (included)
 
 ### Enhancements
-The published version 1.1.59 is the last release authorized by Pelle van der Scheer and dated from roundabout 2021. Somewhat enhanced versions can be found here. Several deprecations were eliminated (work in progress). The chart window is shown in a scrolling window, which can be maximized. Zoom levels are available in four variants..<br/>
-BUT...the original ideas of Pelle remained untouched.
+The published version 1.1.59 is the last release authorized by Pelle van der Scheer and dated from roundabout 2021. Somewhat enhanced versions can be found here. Several deprecations were eliminated. The chart window is shown in a scrolling window, which can be maximized. Zoom levels are available in several variants. For switching to GTK4 in near future the UIManager was removed and replaced by Gio and GLib class functions.Besides 'openastro' the new 'astroChartBuilder.py' (work in progress) is presented for this purpose.<br/>
+BUT as formerly said...the original ideas of Pelle remained untouched.
 
 ### Discussion
 This program is written in python with use of pyGtk for the Gnome GTK3 environment of Linux. For simplicity the .py ending of the executable is omitted, so start a standalone version with
@@ -32,8 +32,10 @@ This program is written in python with use of pyGtk for the Gnome GTK3 environme
 chmod +x ./openastro
 # start program as standalone
 ./openastro --local
+# alternatively for first testing
+./astroChartBuilder.py --local
 ```
-The program is localized in 25 languages in folder 'locale'.
+The program is localized in 25 languages in folder 'locale'. For the new 'astroChartBuilder' localization in incomplete.
 
 Achieve a system-wide installation by copying files accordingly to your distribution. To generate a RPM package (suitable for Red Hat, Fedora, OpenSUSE and so on) a .spec file can be found in directory "packages".<br/>
 Generally the program requires installation of 'pyswisseph' [2] aka 'python3-swisseph' on RPM-systems. For this purpose the package 'python3-swisseph' can be generated with the here added, corresponding .spec file. There are some incompatibilities with newer python versions higher 3.8 and pyswisseph higher 2.1 ... which are eliminated in using the here published software <br/>

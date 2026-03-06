@@ -1862,6 +1862,7 @@ dt_new.year,dt_new.month,dt_new.day,dt_new.hour,dt_new.minute,dt_new.second))
 			f=open(cfg.tempfilenametableprint,"w")
 		f.write(template)
 		f.close()
+
 	""" draw transit ring """
 	def transitRing( self , r ):
 		out = '<circle cx="%s" cy="%s" r="%s" style="fill: none; stroke: %s; stroke-width: 36px; stroke-opacity: .4;"/>' % (r,r,r-18,self.colors['paper_1'])
@@ -3155,7 +3156,7 @@ class mainWindow:
 		self.draw = viewSVG(chart_name)
 		self.draw.window_state = False
 		self.window.unmaximize()
-		self.window.connect('window-state-event', self.draw.on_window_state_event)
+		#self.window.connect('window-state-event', self.draw.on_window_state_event)
 		scrolledwindow = Gtk.ScrolledWindow()
 		# Pack
 		viewport.add(self.draw)
@@ -3217,7 +3218,7 @@ class mainWindow:
 		if response == Gtk.ResponseType.OK:
 			db.databaseMerge(cfg.peopledb,chooser.get_filename())
 		elif response == Gtk.ResponseType.CANCEL:
-					dprint('Dialog closed, no files selected')	
+			dprint('Dialog closed, no files selected')	
 		chooser.destroy()			
 
 	"""
@@ -5390,6 +5391,7 @@ class mainWindow:
 		#aware datetime object
 		dt_input = datetime.datetime(self.dateY.get_value_as_int(), self.dateM.get_value_as_int(), self.dateD.get_value_as_int(), self.timeH.get_value_as_int(), self.timeM.get_value_as_int(), self.timeS.get_value_as_int())
 		dt = pytz.timezone(openAstro.timezonestr).localize(dt_input)
+
 		dprint( dt.strftime('%Y-%m-%d %H:%M:%S %Z%z') )
 		dprint( 'Daylight Saving Time: %s' %((dt.dst().seconds / 3600.0)) )
 		#naive datetime object UTC

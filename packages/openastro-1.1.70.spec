@@ -2,7 +2,7 @@
 %global alias openastro.org
 
 Name:           OpenAstro
-Version:        1.1.68
+Version:        1.1.70
 Release:        1.11
 Summary:        Astrology charts
 License:        GPLv3+
@@ -71,6 +71,8 @@ rm -rf ${RPM_BUILD_DIR}/%{alias}-%{version}
 %{python3_sitelib}/*
 
 %changelog
+* Fri Mar  5 2026 Erich Kuester <erich.kuester«arcor.de> - 1.1.70-1
+- further optimization
 * Tue Feb 24 2026 Erich Kuester <erich.kuester«arcor.de> - 1.1.66-1
 - some dprecations removed, displaying optimized, general revision
 * Thu Feb 19 2026 Erich Kuester <erich.kuester«arcor.de> - 1.1.64-1
