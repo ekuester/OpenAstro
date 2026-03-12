@@ -21,273 +21,266 @@
 MENU_XML = """
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-	<menu id="MenuBar">
-		<submenu>
-			<attribute name="label" translatable="yes">Chart</attribute>
-			<section>
-				<item>
-					<attribute name="label" translatable="yes">New</attribute>
-					<attribute name="action">win.newChart</attribute>
-				</item>
-				<item>
-					<attribute name="label" translatable="yes">Open</attribute>
-					<attribute name="action">win.openChart</attribute>
-				</item>
-				<item>
-					<attribute name="label" translatable="yes">Save</attribute>
-					<attribute name="action">win.saveChart</attribute>
-				</item>
-				<submenu>
-					<attribute name="label" translatable="yes">Import</attribute>
-					<section>
-						<item>
-							<attribute name="label" translatable="yes">Oroboros (*.xml)</attribute>
-							<attribute name="action">win.import</attribute>
-							<attribute name="target">importOroboros</attribute>
-						</item>
-						<item>
-							<attribute name="label" translatable="yes">Astrolog (*.dat)</attribute>
-							<attribute name="action">win.import</attribute>
-							<attribute name="target">importAstrolog</attribute>
-						</item>
-						<item>
-							<attribute name="label" translatable="yes">Skylendar (*.skif)</attribute>
-							<attribute name="action">win.import</attribute>
-							<attribute name="target">importSkylendar</attribute>
-						</item>
-						<item>
-							<attribute name="label" translatable="yes">Zet8 Dbase (*.zbs)</attribute>
-							<attribute name="action">win.import</attribute>
-							<attribute name="target">importZet8</attribute>
-						</item>
-					</section>
-				</submenu>
-				<submenu>
-					<attribute name="label" translatable="yes">Export</attribute>
-					<section>
-						<item>
-							<attribute name="label" translatable="yes">PNG file</attribute>
-							<attribute name="action">win.export</attribute>
-							<attribute name="target">pngfile</attribute>
-						</item>
-						<item>
-							<attribute name="label" translatable="yes">JPG file</attribute>
-							<attribute name="action">win.export</attribute>
-							<attribute name="target">jpgfile</attribute>
-						</item>
-						<item>
-							<attribute name="label" translatable="yes">SVG file</attribute>
-							<attribute name="action">win.export</attribute>
-							<attribute name="target">svgfile</attribute>
-						</item>
-						<item>
-							<attribute name="label" translatable="yes">PDF file</attribute>
-							<attribute name="action">win.export</attribute>
-							<attribute name="target">pdffile</attribute>
-						</item>
-					</section>
-				</submenu>
-				<item>
-					<attribute name="label" translatable="yes">Close</attribute>
-					<attribute name="action">win.close</attribute>
-				</item>
-			</section>
-		</submenu>
-		<submenu>
-			<attribute name="label" translatable="yes">Edit</attribute>
-			<section>
-				<item>
-					<attribute name="label" translatable="yes">Copy</attribute>
-					<attribute name="action">win.copy</attribute>
-				</item>
-				<item>
-					<attribute name="label" translatable="yes">Paste</attribute>
-					<attribute name="action">win.paste</attribute>
-				</item>
-			</section>
-		</submenu>
-		<submenu>
-			<attribute name="label" translatable="yes">Event</attribute>
-			<section>
-				<item>
-					<attribute name="label" translatable="yes">Edit Event</attribute>
-					<attribute name="action">win.eventData</attribute>
-				</item>
-				<item>
-					<attribute name="label" translatable="yes">Open Database</attribute>
-					<attribute name="action">win.openDatabase</attribute>
-				</item>
-				<submenu>
-					<attribute name="label" translatable="yes">Quick Open Database</attribute>
-						<section>
-							<item>
-								<attribute name="label" translatable="yes">Line</attribute>
-								<attribute name="action">win.shape</attribute>
-								<attribute name="target">line</attribute>
-							</item>
-							<item>
-								<attribute name="label" translatable="yes">Triangle</attribute>
-								<attribute name="action">win.shape</attribute>
-								<attribute name="target">triangle</attribute>
-							</item>
-							<item>
-								<attribute name="label" translatable="yes">Square</attribute>
-								<attribute name="action">win.shape</attribute>
-								<attribute name="target">square</attribute>
-							</item>
-							<item>
-								<attribute name="label" translatable="yes">Polygon</attribute>
-								<attribute name="action">win.shape</attribute>
-								<attribute name="target">polygon</attribute>
-							</item>
-							<item>
-								<attribute name="label" translatable="yes">Circle</attribute>
-								<attribute name="action">win.shape</attribute>
-								<attribute name="target">circle</attribute>
-							</item>
-						</section>
-				</submenu>
-				<item>
-					<attribute name="label" translatable="yes">Open Famous People Database</attribute>
-					<attribute name="action">win.openDataFamous</attribute>
-				</item>
-			</section>
-		</submenu>
-		<submenu>
-			<attribute name="label" translatable="yes">Settings</attribute>
-			<section>
-				<item>
-					<attribute name="label" translatable="yes">Set Location</attribute>
-					<attribute name="action">win.settingsLocation</attribute>
-				</item>
-				<item>
-					<attribute name="label" translatable="yes">Configuration</attribute>
-					<attribute name="action">win.settingsConfiguration</attribute>
-				</item>
-			</section>
-		</submenu>
-		<submenu>
-			<attribute name="label" translatable="yes">Chart Types</attribute>
-			<section>
-				<item>
-					<attribute name="label" translatable="yes">Radix Chart</attribute>
-					<attribute name="action">win.specialRadix</attribute>
-				</item>
-				<item>
-					<attribute name="label" translatable="yes">Transit Chart</attribute>
-					<attribute name="action">win.specialTransit</attribute>
-				</item>
-				<item>
-					<attribute name="label" translatable="yes">Synastry Chart</attribute>
-					<attribute name="action">win.specialSynastry</attribute>
-				</item>
-				<item>
-					<attribute name="label" translatable="yes">Composite Chart</attribute>
-					<attribute name="action">win.specialComposite</attribute>
-				</item>
-				<item>
-					<attribute name="label" translatable="yes">Combine Chart</attribute>
-					<attribute name="action">win.specialCombine</attribute>
-				</item>
-				<item>
-					<attribute name="label" translatable="yes">Solar Return</attribute>
-					<attribute name="action">win.specialSolar</attribute>
-				</item>
-				<item>
-					<attribute name="label" translatable="yes">Solar Progression</attribute>
-					<attribute name="action">win.specialProgression</attribute>
-				</item>
-			</section>
-		</submenu>
-		<submenu>
-			<attribute name="label" translatable="yes">Tables</attribute>
-				<item>
-					<attribute name="label" translatable="yes">Monthly Timeline</attribute>
-					<attribute name="action">win.tableMonthlyTimeline</attribute>
-				</item>
-				<item>
-					<attribute name="label" translatable="yes">Cusp Aspects</attribute>
-					<attribute name="action">win.tableCuspAspects</attribute>
-				</item>
-		</submenu>
-		<submenu>
-			<attribute name="label" translatable="yes">Zoom</attribute>
-				<section>
-					<item>
-						<attribute name="label" translatable="yes">In</attribute>
-						<attribute name="action">win.zoom</attribute>
-						<attribute name="target">zIn</attribute>
-						<attribute name="accel">&lt;Primary&gt;i</attribute>
-					</item>
-					<item>
-						<attribute name="label" translatable="yes">80%</attribute>
-						<attribute name="action">win.zoom</attribute>
-						<attribute name="target">z80</attribute>
-					</item>
-					<item>
-						<attribute name="label" translatable="yes">100%</attribute>
-						<attribute name="action">win.zoom</attribute>
-						<attribute name="target">z100</attribute>
-					</item>
-					<item>
-						<attribute name="label" translatable="yes">150%</attribute>
-						<attribute name="action">win.zoom</attribute>
-						<attribute name="target">z150</attribute>
-					</item>
-					<item>
-						<attribute name="label" translatable="yes">200%</attribute>
-						<attribute name="action">win.zoom</attribute>
-						<attribute name="target">z200</attribute>
-					</item>
-					<item>
-						<attribute name="label" translatable="yes">Out</attribute>
-						<attribute name="action">win.zoom</attribute>
-						<attribute name="target">zOut</attribute>
-						<attribute name="accel">&lt;Primary&gt;o</attribute>
-					</item>
-				</section>
-		</submenu>
-		<submenu>
-			<attribute name="label" translatable="yes">Extra</attribute>
-				<item>
-					<attribute name="label" translatable="yes">Export Database</attribute>
-					<attribute name="action">win.exportdb</attribute>
-				</item>
-				<item>
-					<attribute name="label" translatable="yes">Import Database</attribute>
-					<attribute name="action">win.importdb</attribute>
-				</item>
-		</submenu>
-		<submenu>
-			<attribute name="label" translatable="yes">Help</attribute>
-			<section>
-				<item>
-					<attribute name="label" translatable="yes">About</attribute>
-					<attribute name="action">win.about</attribute>
-				</item>
-			</section>
-		</submenu>
-	</menu>
-	<menu id="AppMenu">
-		<section>
-			<item>
-				<attribute name="label" translatable="yes">New</attribute>
-				<attribute name="action">app.new</attribute>
-			</item>
-			<item>
-				<attribute name="action">win.maximize</attribute>
-				<attribute name="label" translatable="yes">Maximize</attribute>
-			</item>
-			<item>
-				<attribute name="label" translatable="yes">Quit</attribute>
-				<attribute name="action">app.quit</attribute>
-				<attribute name="accel">&lt;Primary&gt;q</attribute>
-			</item>
-		</section>
-	</menu>
+  <menu id="MenuBar">
+    <submenu>
+      <attribute name="label" translatable="yes">Chart</attribute>
+      <section>
+        <item>
+          <attribute name="label" translatable="yes">New</attribute>
+          <attribute name="action">win.newChart</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Open</attribute>
+          <attribute name="action">win.openChart</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Save</attribute>
+          <attribute name="action">win.saveChart</attribute>
+        </item>
+        <submenu>
+          <attribute name="label" translatable="yes">Import</attribute>
+          <section>
+            <item>
+              <attribute name="label" translatable="yes">Oroboros (*.xml)</attribute>
+              <attribute name="action">win.import</attribute>
+              <attribute name="target">importOroboros</attribute>
+            </item>
+            <item>
+              <attribute name="label" translatable="yes">Astrolog (*.dat)</attribute>
+              <attribute name="action">win.import</attribute>
+              <attribute name="target">importAstrolog</attribute>
+            </item>
+            <item>
+              <attribute name="label" translatable="yes">Skylendar (*.skif)</attribute>
+              <attribute name="action">win.import</attribute>
+              <attribute name="target">importSkylendar</attribute>
+            </item>
+            <item>
+              <attribute name="label" translatable="yes">Zet8 Dbase (*.zbs)</attribute>
+              <attribute name="action">win.import</attribute>
+              <attribute name="target">importZet8</attribute>
+            </item>
+          </section>
+        </submenu>
+        <submenu>
+          <attribute name="label" translatable="yes">Export</attribute>
+          <section>
+            <item>
+              <attribute name="label" translatable="yes">PNG file</attribute>
+              <attribute name="action">win.export</attribute>
+              <attribute name="target">pngfile</attribute>
+            </item>
+            <item>
+              <attribute name="label" translatable="yes">JPG file</attribute>
+              <attribute name="action">win.export</attribute>
+              <attribute name="target">jpgfile</attribute>
+            </item>
+            <item>
+              <attribute name="label" translatable="yes">SVG file</attribute>
+              <attribute name="action">win.export</attribute>
+              <attribute name="target">svgfile</attribute>
+            </item>
+            <item>
+              <attribute name="label" translatable="yes">PDF file</attribute>
+              <attribute name="action">win.export</attribute>
+              <attribute name="target">pdffile</attribute>
+            </item>
+          </section>
+        </submenu>
+        <item>
+          <attribute name="label" translatable="yes">Close</attribute>
+          <attribute name="action">win.close</attribute>
+        </item>
+      </section>
+    </submenu>
+    <submenu>
+      <attribute name="label" translatable="yes">Edit</attribute>
+      <section>
+        <item>
+          <attribute name="label" translatable="yes">Copy</attribute>
+          <attribute name="action">win.copy</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Paste</attribute>
+          <attribute name="action">win.paste</attribute>
+        </item>
+      </section>
+    </submenu>
+    <submenu>
+      <attribute name="label" translatable="yes">Settings</attribute>
+      <section>
+        <item>
+          <attribute name="label" translatable="yes">Set Location</attribute>
+          <attribute name="action">win.settingsLocation</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Configuration</attribute>
+          <attribute name="action">win.settingsConfiguration</attribute>
+        </item>
+      </section>
+    </submenu>
+    <submenu>
+      <attribute name="label" translatable="yes">Chart Types</attribute>
+      <section>
+        <item>
+          <attribute name="label" translatable="yes">Radix Chart</attribute>
+          <attribute name="action">win.specialRadix</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Transit Chart</attribute>
+          <attribute name="action">win.specialTransit</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Synastry Chart</attribute>
+          <attribute name="action">win.chartType</attribute>
+          <attribute name="target">Synastry</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Composite Chart</attribute>
+          <attribute name="action">win.chartType</attribute>
+          <attribute name="target">Composite</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Combine Chart</attribute>
+          <attribute name="action">win.chartType</attribute>
+          <attribute name="target">Combine</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Solar Return</attribute>
+          <attribute name="action">win.specialSolar</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Solar Progression</attribute>
+          <attribute name="action">win.specialProgression</attribute>
+        </item>
+      </section>
+    </submenu>
+    <submenu>
+      <attribute name="label" translatable="yes">Tables</attribute>
+        <item>
+          <attribute name="label" translatable="yes">Monthly Timeline</attribute>
+          <attribute name="action">win.tableMonthlyTimeline</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Cusp Aspects</attribute>
+          <attribute name="action">win.tableCuspAspects</attribute>
+        </item>
+    </submenu>
+    <submenu>
+      <attribute name="label" translatable="yes">Zoom</attribute>
+        <section>
+          <item>
+            <attribute name="label" translatable="yes">In</attribute>
+            <attribute name="action">win.zoom</attribute>
+            <attribute name="target">zIn</attribute>
+            <attribute name="accel">&lt;Primary&gt;i</attribute>
+          </item>
+          <item>
+            <attribute name="label" translatable="yes">80%</attribute>
+            <attribute name="action">win.zoom</attribute>
+            <attribute name="target">z80</attribute>
+          </item>
+          <item>
+            <attribute name="label" translatable="yes">100%</attribute>
+            <attribute name="action">win.zoom</attribute>
+            <attribute name="target">z100</attribute>
+          </item>
+          <item>
+            <attribute name="label" translatable="yes">150%</attribute>
+            <attribute name="action">win.zoom</attribute>
+            <attribute name="target">z150</attribute>
+          </item>
+          <item>
+            <attribute name="label" translatable="yes">200%</attribute>
+            <attribute name="action">win.zoom</attribute>
+            <attribute name="target">z200</attribute>
+          </item>
+          <item>
+            <attribute name="label" translatable="yes">Out</attribute>
+            <attribute name="action">win.zoom</attribute>
+            <attribute name="target">zOut</attribute>
+            <attribute name="accel">&lt;Primary&gt;o</attribute>
+          </item>
+        </section>
+    </submenu>
+    <submenu>
+      <attribute name="label" translatable="yes">Extra</attribute>
+        <item>
+          <attribute name="label" translatable="yes">Export Database</attribute>
+          <attribute name="action">win.exportdb</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Import Database</attribute>
+          <attribute name="action">win.importdb</attribute>
+        </item>
+    </submenu>
+    <submenu>
+      <attribute name="label" translatable="yes">Help</attribute>
+      <section>
+        <item>
+          <attribute name="label" translatable="yes">About</attribute>
+          <attribute name="action">win.about</attribute>
+        </item>
+      </section>
+    </submenu>
+  </menu>
+  <menu id="AppMenu">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">New</attribute>
+        <attribute name="action">app.new</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.maximize</attribute>
+        <attribute name="label" translatable="yes">Maximize</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Quit</attribute>
+        <attribute name="action">app.quit</attribute>
+        <attribute name="accel">&lt;Primary&gt;q</attribute>
+      </item>
+    </section>
+  </menu>
 </interface>
 """
-
+EVENT_XML = """
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <menu id="EventUI">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Edit Event</attribute>
+        <attribute name="action">win.eventData</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Open Database</attribute>
+        <attribute name="action">win.openDatabase</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Open Famous People Database</attribute>
+        <attribute name="action">win.openDataFamous</attribute>
+      </item>
+    </section>
+  </menu>
+</interface>
+"""
+M_ITEM ="""      <item>
+        <attribute name="label" translatable="yes">$label</attribute>
+        <attribute name="action">win.$db</attribute>
+        <attribute name="target" type="i">$idx</attribute>
+      </item>"""
+BEGIN_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <menu id="UpdateUI">
+    <section>
+"""
+END_XML = """
+    </section>
+  </menu>
+</interface>
+"""
 #basics
 import math, sys, os.path, datetime, socket, gettext, codecs, webbrowser, pytz
 
@@ -320,7 +313,7 @@ if "--local" in sys.argv:
 	LOCAL = True
 #for debugging set to True
 DEBUG = False
-VERSION = "1.1.70"
+VERSION = "1.1.72"
 #radius of zodiac
 RADIUS = 240
 # default dimensions of SVG viewBox, ratio shouls be near sqrt(2) = 1.41421356
@@ -1417,11 +1410,8 @@ class AstroWindow(Gtk.ApplicationWindow):
 		self.add_action(paste_action)
 
 		# action with a state created (name, parameter type, initial state)
-		shape_action = Gio.SimpleAction.new_stateful(
-			"shape",
-			GLib.VariantType.new('s'),
-			GLib.Variant.new_string('line')
-		)
+		shape_action = Gio.SimpleAction.new_stateful("shape",GLib.VariantType.new('s'),
+			GLib.Variant.new_string('line'))
 		# connected to the callback function
 		shape_action.connect("activate", self.shape_callback)
 		# added to the window
@@ -1453,6 +1443,11 @@ class AstroWindow(Gtk.ApplicationWindow):
 		transit_action = Gio.SimpleAction.new("specialTransit", None)
 		transit_action.connect("activate", self.specialTransit_callback)
 		self.add_action(transit_action)
+
+		chart_type_action = Gio.SimpleAction.new_stateful("chartType",GLib.VariantType.new('s'),GLib.Variant.new_string('Synastry'))
+		chart_type_action.connect("activate", self.chartType_callback)
+		self.add_action(chart_type_action)
+
 		solar_action = Gio.SimpleAction.new("specialSolar", None)
 		solar_action.connect("activate", self.specialSolar_callback)
 		self.add_action(solar_action)
@@ -1491,6 +1486,9 @@ class AstroWindow(Gtk.ApplicationWindow):
 		about_action.connect("activate", self.about_callback)
 		# action added to the application
 		self.add_action(about_action)
+
+		self.first_time = True
+		self.updateUI()
 
 		box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=0)
 		viewport = Gtk.Viewport()
@@ -1592,7 +1590,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 		if "timezonestr" in list:
 			app.timezonestr = list["timezonestr"]
 		else:
-			app.timezonestr = db.gnearest(app.geolat,app.geolon)['timezonestr']
+			app.timezonestr = app.db.gnearest(app.geolat,app.geolon)['timezonestr']
 		app.geonameid = None
 		if "geonameid" in list:
 			app.geonameid = list['geonameid']
@@ -1717,13 +1715,37 @@ class AstroWindow(Gtk.ApplicationWindow):
 		file_filter = Gtk.FileFilter()
 		#select file formats
 		if selected == 'importOroboros':
-			print('OROBOROS')
-		elif selected == 'importAstrolog':
-			print('ASTROLOG')
+			file_filter.set_name("Oroboros Charts (*.xml)")
+			file_filter.add_mime_type("application/xml")
+			file_filter.add_pattern("*.xml")
+			file_name = self.file_to_open(f_filter=file_filter)
+			if file_name is not None:
+				app.importOroboros(file_name)
 		elif selected == 'importSkylendar':
-			print('SKYLENDAR')
+			file_filter.set_name("Skylendar Charts (*.skif)")
+			file_filter.add_mime_type("application/skif")
+			file_filter.add_pattern("*.skif")
+			file_name = self.file_to_open(f_filter=file_filter)
+			if file_name is not None:
+				app.importSkylendar(file_name)
+		elif selected == 'importAstrolog':
+			file_filter.set_name("Astrolog Charts (*.dat)")
+			file_filter.add_mime_type("application/dat")
+			file_filter.add_pattern("*.dat")
+			file_name = self.file_to_open(f_filter=file_filter)
+			if file_name is not None:
+				app.importAstrolog(file_name)
 		elif selected == 'importZet8':
-			print('ZET8')
+			file_filter.set_name("Zet8 Databases (*.zbs)")
+			file_filter.add_mime_type("application/zbs")
+			file_filter.add_pattern("*.zbs")
+			file_name = self.file_to_open(f_filter=file_filter)
+			if file_name is not None:
+				app.importZet8(file_name)
+		elif response == Gtk.ResponseType.CANCEL:
+			dprint('Dialog closed, no files selected')
+			return
+		self.updateChart()
 
 	""" Save chart in OAC format """
 	def saveChart_callback(self, action, parameter):
@@ -1930,11 +1952,11 @@ class AstroWindow(Gtk.ApplicationWindow):
 		"""
 		#create history actions
 		history = app.db.history
+		# last will be first
 		history.reverse()
 		for i in range(10):
 			if i < len(history):
 				label=history[i][1]
-				print('LABEL: >>>', label)
 				visible=True
 				list=history[i]
 			else:
@@ -1948,21 +1970,43 @@ class AstroWindow(Gtk.ApplicationWindow):
 			action.set_visible(visible)			
 			self.actiongroup.add_action(action)
 			"""
-		#create quickdatabaseopen actions
+		# create 'Quick Open' actions
 		self.DB = app.db.getDatabase()
+		t_item = Template(M_ITEM)
+		items = []
 		for i in range(len(self.DB)):
-			print('SELF.DB: >>>', self.DB[i]['name'])
-			"""
-			self.uimanager.add_ui(self.ui_mid_quickopendatabase, '/MenuBar/Event/QuickOpenDatabase', 'quickopendatabase%s'%(i), 'quickopendatabase%s'%(i), Gtk.UIManagerItemType.MENUITEM, False)
-			action=Gtk.Action('quickopendatabase%s'%(i),self.DB[i]["name"],None,False)
-			action.connect('activate',self.updadef getDatabaseteChartList,self.DB[i])
-			action.set_visible(True)
-			self.actiongroup.add_action(action) """
-		"""
-		#update uimanager
-		self.uimanager.insert_action_group(self.actiongroup, 0)		
-		self.uimanager.ensure_update()
-		"""
+			# substitute id and name
+			item = t_item.substitute(db='quickopendb', idx=i, label=self.DB[i]['name'])
+			items.append(item)
+		quick_open_items = '\n'.join(items)
+		menu = app.get_menubar()
+		if self.first_time:
+			#generate 'Event' menu
+			event_builder = Gtk.Builder()
+			event_builder.add_from_string(EVENT_XML)
+			self.event_menu = event_builder.get_object("EventUI")
+			#make action for 'quickopendb'
+			quick_open_action = Gio.SimpleAction.new_stateful(
+				"quickopendb",
+				GLib.VariantType.new('i'),
+				GLib.Variant.new_int32(value=1)
+			)
+			quick_open_action.connect("activate", self.quickopendb_callback)
+			self.add_action(quick_open_action)
+		quick_open_xml = BEGIN_XML + quick_open_items + END_XML
+		update_builder = Gtk.Builder()
+		update_builder.add_from_string(quick_open_xml)
+		quick_open_menu = update_builder.get_object("UpdateUI")
+		#self.event_menu.insert_item(1, Gio.MenuItem.new_submenu('Quick Open Database', quick_open_menu))
+		self.event_menu.insert_submenu(1, 'Quick Open Database', quick_open_menu)
+		if not self.first_time:
+			menu.remove(2)
+		menu.insert_submenu(2, 'Event', self.event_menu)
+
+	def quickopendb_callback(self, action, parameter):
+		idx = parameter.get_int32()
+		action.set_state(parameter)
+		self.updateChartList(None, self.DB[idx])
 
 	def eventDataNew_callback(self, action, parameter):
 		# default location
@@ -2415,8 +2459,7 @@ self.geoCC.get_text() == app.countrycode and self.geoLoc.get_text() == app.locat
 				return
 
 		#apply data
-		self.eventDataApply( widget )
-		print('ADDHISTORY 2395', self.geoLocFound, widget.get_property('name'))
+		self.eventDataApply(widget)
 		if self.geoLocFound:
 			self.window2.destroy()
 			#update history
@@ -2628,11 +2671,7 @@ self.geoCC.get_text() == app.countrycode and self.geoLoc.get_text() == app.locat
 			if self.DB[i]["id"] == model.get_value(iter,0):
 				self.ODDlist = self.DB[i]
 		name = self.ODDlist["name"]
-		dialog=Gtk.Dialog(
-			title=_('Question'),
-			parent=self.win_OD,
-			flags=0
-		)
+		dialog=Gtk.Dialog(title=_('Question'),parent=self.win_OD,flags=0)
 		dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT)
 		dialog.add_button(Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT)
 		dialog.set_destroy_with_parent(True)
@@ -2648,7 +2687,9 @@ self.geoCC.get_text() == app.countrycode and self.geoLoc.get_text() == app.locat
 			#delete database entry
 			sql='DELETE FROM event_natal WHERE id='+str(del_id)
 			app.db.pquery([sql])
+
 			dprint('deleted database entry: '+self.ODDlist["name"])
+
 			widget.destroy()
 			self.win_OD.destroy()
 			self.openDatabase(extraDB=None)
@@ -2743,6 +2784,184 @@ self.geoCC.get_text() == app.countrycode and self.geoLoc.get_text() == app.locat
 						"extra":"" #extra
 						})
 		return newDB
+
+	def chartType_callback(self, action, parameter):
+		selected = parameter.get_string()
+		action.set_state(parameter)
+		if selected == "Synastry":
+			selectstr = "Select for Synastry"
+		elif selected == "Composite":
+			selectstr = "Select for Composite"
+		elif selected == "Combine":
+			selectstr = "Select for Combine"
+		self.openDatabaseSelect(selectstr, selected)
+
+	def openDatabaseSelect(self, selectstr, type):
+		self.win_OD = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+		self.win_OD.set_title(_('Select Database Entry'))
+		self.win_OD.set_icon_from_file(app.cfg.iconWindow)
+		self.win_OD.set_size_request(400, 450)
+		self.win_OD.move(150,150)
+		self.win_OD.connect("delete_event", lambda w,e: self.openDatabaseSelectReject())
+		#define listmodel		
+		self.listmodel = Gtk.ListStore(int,str,str,str)	
+		self.win_OD_treeview = Gtk.TreeView(model=self.listmodel)
+		#selection
+		self.win_OD_selection = self.win_OD_treeview.get_selection()
+		self.win_OD_selection.set_mode(Gtk.SelectionMode.SINGLE)
+		#treeview columns		
+		self.win_OD_tvcolumn0 = Gtk.TreeViewColumn(_('Id'))
+		self.win_OD_tvcolumn1 = Gtk.TreeViewColumn(_('Name'))
+		self.win_OD_tvcolumn2 = Gtk.TreeViewColumn(_('Birth Date (Local)'))
+		self.win_OD_tvcolumn3 = Gtk.TreeViewColumn(_('Location'))
+		#add data from event_natal table
+		self.DB = app.db.getDatabase()
+		for i in range(len(self.DB)):
+			h,m,s = app.decHour(float(self.DB[i]["hour"]))
+			dt_utc=datetime.datetime(int(self.DB[i]["year"]),int(self.DB[i]["month"]),int(self.DB[i]["day"]),h,m,s)
+			dt = dt_utc + datetime.timedelta(seconds=float(self.DB[i]["timezone"])*float(3600))
+			birth_date = str(dt.year)+'-%(#1)02d-%(#2)02d %(#3)02d:%(#4)02d:%(#5)02d' % {'#1':dt.month,'#2':dt.day,'#3':dt.hour,'#4':dt.minute,'#5':dt.second}			
+			self.listmodel.append([self.DB[i]["id"],self.DB[i]["name"],birth_date,self.DB[i]["location"]])
+		#add columns to treeview
+		self.win_OD_treeview.append_column(self.win_OD_tvcolumn0)
+		self.win_OD_treeview.append_column(self.win_OD_tvcolumn1)
+		self.win_OD_treeview.append_column(self.win_OD_tvcolumn2)
+		self.win_OD_treeview.append_column(self.win_OD_tvcolumn3)
+		#cell renderers
+		cell0 = Gtk.CellRendererText()
+		cell1 = Gtk.CellRendererText()
+		cell2 = Gtk.CellRendererText()
+		cell3 = Gtk.CellRendererText()
+		#add cells to columns
+		self.win_OD_tvcolumn0.pack_start(cell0, True)
+		self.win_OD_tvcolumn1.pack_start(cell1, True)
+		self.win_OD_tvcolumn2.pack_start(cell2, True)
+		self.win_OD_tvcolumn3.pack_start(cell3, True)
+		# set the cell attributes to the listmodel column
+		self.win_OD_tvcolumn0.set_attributes(cell0, text = 0)
+		self.win_OD_tvcolumn1.set_attributes(cell1, text = 1)
+		self.win_OD_tvcolumn2.set_attributes(cell2, text = 2)
+		self.win_OD_tvcolumn3.set_attributes(cell3, text = 3)
+		#set treeview options
+		self.win_OD_treeview.set_search_column(1)
+		self.win_OD_tvcolumn0.set_sort_column_id(0)
+		self.win_OD_tvcolumn1.set_sort_column_id(1)
+		self.win_OD_tvcolumn2.set_sort_column_id(2)
+		self.win_OD_tvcolumn3.set_sort_column_id(3)
+		#add treeview to scrolledwindow
+		scrolledwindow = Gtk.ScrolledWindow()
+		scrolledwindow.add(self.win_OD_treeview)
+		scrolledwindow.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.ALWAYS)
+		vbox=Gtk.VBox()
+		vbox.pack_start(scrolledwindow, True, True, 0)
+		hbox=Gtk.HBox()		
+		#buttons
+		button = Gtk.Button.new_with_mnemonic(label=_('Cancel'))
+		button.connect("clicked", lambda w: self.openDatabaseSelectReject())
+		hbox.pack_end(button,False, False, 0)	
+		button = Gtk.Button.new_with_mnemonic(label=selectstr)
+		button.connect("clicked", lambda w: self.openDatabaseSelectReturn(type))
+		hbox.pack_end(button,False, False, 0)		
+		#display window
+		vbox.pack_start(hbox,False, False, 0)
+		self.win_OD.add(vbox)
+		self.win_OD_treeview.set_model(model=self.listmodel)
+		self.win_OD.show_all()
+		return
+
+	def openDatabaseSelectReject(self):
+		self.win_OD.destroy()
+		return
+
+	def openDatabaseSelectReturn(self, type):
+		model = self.win_OD_selection.get_selected()[0]
+		iter = self.win_OD_selection.get_selected()[1]
+		for i in range(len(self.DB)):
+			if self.DB[i]["id"] == model.get_value(iter,0):
+				list = self.DB[i]
+		#synastry
+		if type == "Synastry":
+			app.type="Transit"
+			app.t_name=str(list["name"])
+			app.t_year=int(list["year"])
+			app.t_month=int(list["month"])
+			app.t_day=int(list["day"])
+			app.t_hour=float(list["hour"])
+			app.t_geolon=float(list["geolon"])
+			app.t_geolat=float(list["geolat"])
+			app.t_altitude=int(list["altitude"])
+			app.t_location=str(list["location"])
+			app.t_timezone=float(list["timezone"])
+			app.charttype="%s (%s)" % (app.label["synastry"],app.t_name)
+			app.transit=True
+			chart_name = app.makeSVG()
+		elif type == "Composite":
+			app.type="Composite"
+			app.t_name=str(list["name"])
+			app.t_year=int(list["year"])
+			app.t_month=int(list["month"])
+			app.t_day=int(list["day"])
+			app.t_hour=float(list["hour"])
+			app.t_geolon=float(list["geolon"])
+			app.t_geolat=float(list["geolat"])
+			app.t_altitude=int(list["altitude"])
+			app.t_location=str(list["location"])
+			app.t_timezone=float(list["timezone"])
+			app.charttype="%s (%s)" % (app.label["composite"],app.t_name)
+			app.transit=False
+			chart_name = app.makeSVG()
+		elif type == "Combine":
+			app.type="Combine"
+			app.t_name=str(list["name"])
+			app.t_year=int(list["year"])
+			app.t_month=int(list["month"])
+			app.t_day=int(list["day"])
+			app.t_hour=float(list["hour"])
+			app.t_geolon=float(list["geolon"])
+			app.t_geolat=float(list["geolat"])
+			app.t_altitude=int(list["altitude"])
+			app.t_location=str(list["location"])
+			app.t_timezone=float(list["timezone"])
+			#calculate combine between both utc times
+			h,m,s = app.decHour(app.hour)
+			dt1 = datetime.datetime(app.year,app.month,app.day,h,m,s)
+			h,m,s = app.decHour(app.t_hour)
+			dt2 = datetime.datetime(app.t_year,app.t_month,app.t_day,h,m,s)
+			if dt1 > dt2:
+				delta = dt1 - dt2
+				hdelta = delta // 2
+				combine = dt2 + hdelta
+			else:
+				delta = dt2 - dt1
+				hdelta = delta // 2
+				combine = dt1 + hdelta
+			#take lon,lat middle
+			app.c_geolon = (app.geolon + app.t_geolon)/2.0
+			app.c_geolat = (app.geolat + app.t_geolat)/2.0
+			app.c_altitude = (app.t_altitude + app.altitude)/2.0
+			app.c_year = combine.year
+			app.c_month = combine.month
+			app.c_day = combine.day
+			app.c_hour = app.decHourJoin(combine.hour,combine.minute,combine.second)
+			app.charttype="%s (%s)" % (app.label["combine"],app.t_name)
+			app.transit=False
+			#set new date for printing in svg
+			app.year = app.c_year
+			app.month = app.c_month
+			app.day = app.c_day
+			app.hour = app.c_hour
+			app.geolat = app.c_geolat
+			app.geolon = app.c_geolon
+			app.timezone_str = zonetab.nearest_tz(app.geolat,app.geolon,zonetab.timezones())[2]
+			#aware datetime object
+			dt_input = datetime.datetime(combine.year, combine.month, combine.day, combine.hour, combine.minute, combine.second)
+			dt = pytz.timezone(app.timezone_str).localize(dt_input)
+			app.timezone=app.offsetToTz(dt.utcoffset())
+			app.utcToLocal()
+			chart_name = app.makeSVG()
+		self.draw.setup_svg(chart_name)
+		self.draw.queue_draw()
+		self.win_OD.destroy()		
 
 	"""
 	 Menu items for general configuration
@@ -3220,10 +3439,10 @@ self.geoCC.get_text() == app.countrycode and self.geoLoc.get_text() == app.locat
 		app.t_geolat = float(app.home_geolat)
 
 		now = datetime.datetime.now()
-		timezone_str = zonetab.nearest_tz(app.t_geolat, app.t_geolon, zonetab. timezones())[2]
+		app.timezone_str = zonetab.nearest_tz(app.t_geolat, app.t_geolon, zonetab. timezones())[2]
 		#aware datetime object
 		dt_input = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute, now.second)
-		dt = pytz.timezone(timezone_str).localize(dt_input)
+		dt = pytz.timezone(app.timezone_str).localize(dt_input)
 		#naive utc datetime object
 		dt_utc = dt.replace(tzinfo=None) - dt.utcoffset()
 		#transit data
@@ -3743,19 +3962,6 @@ class AstroApplication(Gtk.Application):
 		# action added to the application
 		self.add_action(quit_action)
 
-		# action with a state created
-		state_action = Gio.SimpleAction.new_stateful("state",  GLib.VariantType.new('s'), GLib.Variant.new_string('off'))
-		# action connected to the callback function
-		state_action.connect("activate", self.state_callback)
-		# action added to the application
-		self.add_action(state_action)
-
-		# action with a state created
-		awesome_action = Gio.SimpleAction.new_stateful("awesome", None, GLib.Variant.new_boolean(False))
-		# action connected to the callback function
-		awesome_action.connect("activate", self.awesome_callback)
-		# action added to the application
-		self.add_action(awesome_action)
 		""" Configuration / Data Base / Calculations / Drawing / Window """
 		# get dimensions of screen
 		display = Gdk.Display.get_default()
@@ -3774,7 +3980,7 @@ class AstroApplication(Gtk.Application):
 		if self.home_location == '' or self.home_geolat == '' or self.home_geolon == '':
 			dprint('Unknown home location, asking for new')
 			self.ask_for_home = True
-			self.home_location='Amsterdam'
+			self.home_location='Ooyerhoek'
 			self.home_geolon=6.219530
 			self.home_geolat=52.120710
 			self.home_countrycode='NL'
@@ -5562,15 +5768,73 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 		self.utcToLocal()
 		return
 
-	def importAstrolog32(self, filename):
+	"""
+	 Check Timezone in case of Daylight Saving
+	"""
+	def specialTimeZone(self, tz):
+		# create a new window
+		self.win_TZ = Gtk.Dialog(title=_("Daylight Saving Time Detected"),parent=None,flags=0)
+		self.win_TZ.set_icon_from_file(app.cfg.iconWindow)
+		self.win_TZ.connect("delete_event", lambda w,e: self.win_TZ.destroy())
+		self.win_TZ.move(150, 150)
+		self.win_TZ.set_border_width(5)
+		self.win_TZ.set_size_request(300,100)
+		self.win_TZ.set_modal()
+		tz_box = self.win_TZ.get_content_area()
+		tz_box.set_spacing(12)
+		header = Gtk.Label(label=_("Change Timezone ?"))
+		tz_box.pack_start(header, False, False, 0)
+		entry_box = Gtk.HBox(homogeneous = False, spacing = 8)
+		_label = Gtk.Label(label=_("Actual Timezone:"))
+		entry_box.pack_start(_label, True, False, 0)
+		tz_split = tz.split('/')
+		_entry = Gtk.Entry()
+		_entry.set_max_length(16)
+		_entry.set_width_chars(12)
+		_entry.set_alignment(xalign=1)
+		_entry.set_editable(False)
+		_entry.set_text(tz_split[0])
+		entry_box.pack_start(_entry, False, False, 0)
+		_label = Gtk.Label(label=_(" / "))
+		entry_box.pack_start(_label, False, False, 0)
+		tz_entry = Gtk.Entry()
+		tz_entry.set_max_length(32)
+		tz_entry.set_width_chars(24)
+		tz_entry.set_text(tz_split[1])
+		tz_entry.connect("activate", self.specialTimeZoneSubmit, tz_entry)
+		entry_box.pack_start(tz_entry, False, False, 0)
+		tz_box.pack_start(entry_box, False, False, 0)
+		hints = Gtk.Label(label=_("Change Timezone and press <Enter>"))
+		tz_box.pack_start(hints, True, True, 0)
+		button = Gtk.Button.new_with_mnemonic(label = _("Cancel"))
+		button.set_can_default(True)
+		button.connect("clicked", lambda w: self.win_TZ.destroy())
+		self.win_TZ.action_area.pack_end(child=button, expand=False, fill=False, padding=16)
+		#self.win_TZ.action_area.pack_start(button, True, True, 0)
+		self.win_TZ.show_all()
+		tz_entry.grab_focus()
+		self.win_TZ.run()
+
+	def specialTimeZoneSubmit(self, widged, entry):
+		s = self.timezone_str
+		self.timezone_str = s[:s.find('/')+1] + entry.get_text()
+		self.win_TZ.destroy()
+
+	def importAstrolog(self, filename):
 		r = importfile.getAstrolog32(filename)[0]
-		# timezone string
-		timezone_str = zonetab.nearest_tz(float(r['latitude']),float(r['longitude']),zonetab.timezones())[2]
+		#timezone string
+		self.timezone_str = zonetab.nearest_tz(float(r['latitude']),float(r['longitude']),zonetab.timezones())[2]
+		"""
+		  Above looks for nearest noted continent/city, but sometimes
+		  this is a city with deviating daylight saving time
+		"""
+		if r['daylight']:
+			self.specialTimeZone(self.timezone_str)
 		# naive local datetime
 		naive = datetime.datetime(int(r['year']),int(r['month']),int(r['day']),int(r['hour']),int(r['minute']),int(r['second']))
 		# aware datetime object
 		dt_input = datetime.datetime(naive.year, naive.month, naive.day, naive.hour, naive.minute, naive.second)
-		dt = pytz.timezone(timezone_str).localize(dt_input)
+		dt = pytz.timezone(self.timezone_str).localize(dt_input)
 		# naive utc datetime object
 		dt_utc = dt.replace(tzinfo=None) - dt.utcoffset()
 		geon = self.db.gnearest(float(r['latitude']),float(r['longitude']))
@@ -5687,18 +5951,6 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 	def quit_callback(self, action, parameter):
 		sys.exit()
 
-	# callback function for state
-	def state_callback(self, action, parameter):
-		print("State is set to", parameter.get_string())
-		action.set_state(parameter)
-
-	# callback function for awesome
-	def awesome_callback(self, action, parameter):
-		action.set_state(GLib.Variant.new_boolean(not action.get_state()))
-		if action.get_state().get_boolean() is True:
-			print("You checked \"Awesome\"")
-		else:
-			print("You uncheENDcked \"Awesome\"")
 """ END AstroApplication """
 
 """ source: https://stackoverflow.com/q/58685222 """

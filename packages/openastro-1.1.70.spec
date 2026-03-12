@@ -71,7 +71,7 @@ rm -rf ${RPM_BUILD_DIR}/%{alias}-%{version}
 %{python3_sitelib}/*
 
 %changelog
-* Fri Mar  5 2026 Erich Kuester <erich.kuester«arcor.de> - 1.1.70-1
+* Fri Mar  6 2026 Erich Kuester <erich.kuester«arcor.de> - 1.1.70-1
 - further optimization
 * Tue Feb 24 2026 Erich Kuester <erich.kuester«arcor.de> - 1.1.66-1
 - some dprecations removed, displaying optimized, general revision

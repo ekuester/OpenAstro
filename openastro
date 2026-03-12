@@ -3383,7 +3383,7 @@ class mainWindow:
 			elif widget.get_name() == 'importAstrolog32':
 				openAstro.importAstrolog32(chooser.get_filename())
 			elif widget.get_name() == 'importZet8':
-				openAstro.importZet8(chooser.get_filename())			
+				openAstro.importZet8(chooser.get_filename())
 			self.updateChart()
 		elif response == Gtk.ResponseType.CANCEL:
 			dprint('Dialog closed, no files selected')
@@ -4083,7 +4083,7 @@ class mainWindow:
 		self.draw.setup_svg(chart_name)
 		self.draw.queue_draw()
 		self.win_OD.destroy()		
-	
+
 	def openDatabaseDel(self, widget):
 		#get name from selection
 		model = self.win_OD_selection.get_selected()[0]
@@ -4100,8 +4100,7 @@ class mainWindow:
 		dialog.connect("response",self.openDatabaseDelDo)
 		dialog.vbox.pack_start(Gtk.Label(label=_('Are you sure you want to delete')+' '+name+'?'),True,True,0)
 		dialog.show_all()
-		return
-	
+
 	def openDatabaseDelDo(self, widget, response_id):
 		if response_id == Gtk.ResponseType.ACCEPT:
 			#get id from selection
