@@ -30,7 +30,7 @@ setup(name='openastro',
       author_email='devel@openastro.org',
       url='http://www.openastro.org',
       license='GPL',
-      scripts=['openastro'],
+      scripts=['openastro', 'astroChartBuilder.py'],
       packages=['openastromod'],
       data_files=pre_data_files
      )

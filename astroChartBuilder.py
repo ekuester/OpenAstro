@@ -23,77 +23,6 @@ MENU_XML = """
 <interface>
   <menu id="MenuBar">
     <submenu>
-      <attribute name="label" translatable="yes">Chart</attribute>
-      <section>
-        <item>
-          <attribute name="label" translatable="yes">New</attribute>
-          <attribute name="action">win.newChart</attribute>
-        </item>
-        <item>
-          <attribute name="label" translatable="yes">Open</attribute>
-          <attribute name="action">win.openChart</attribute>
-        </item>
-        <item>
-          <attribute name="label" translatable="yes">Save</attribute>
-          <attribute name="action">win.saveChart</attribute>
-        </item>
-        <submenu>
-          <attribute name="label" translatable="yes">Import</attribute>
-          <section>
-            <item>
-              <attribute name="label" translatable="yes">Oroboros (*.xml)</attribute>
-              <attribute name="action">win.import</attribute>
-              <attribute name="target">importOroboros</attribute>
-            </item>
-            <item>
-              <attribute name="label" translatable="yes">Astrolog (*.dat)</attribute>
-              <attribute name="action">win.import</attribute>
-              <attribute name="target">importAstrolog</attribute>
-            </item>
-            <item>
-              <attribute name="label" translatable="yes">Skylendar (*.skif)</attribute>
-              <attribute name="action">win.import</attribute>
-              <attribute name="target">importSkylendar</attribute>
-            </item>
-            <item>
-              <attribute name="label" translatable="yes">Zet8 Dbase (*.zbs)</attribute>
-              <attribute name="action">win.import</attribute>
-              <attribute name="target">importZet8</attribute>
-            </item>
-          </section>
-        </submenu>
-        <submenu>
-          <attribute name="label" translatable="yes">Export</attribute>
-          <section>
-            <item>
-              <attribute name="label" translatable="yes">PNG file</attribute>
-              <attribute name="action">win.export</attribute>
-              <attribute name="target">pngfile</attribute>
-            </item>
-            <item>
-              <attribute name="label" translatable="yes">JPG file</attribute>
-              <attribute name="action">win.export</attribute>
-              <attribute name="target">jpgfile</attribute>
-            </item>
-            <item>
-              <attribute name="label" translatable="yes">SVG file</attribute>
-              <attribute name="action">win.export</attribute>
-              <attribute name="target">svgfile</attribute>
-            </item>
-            <item>
-              <attribute name="label" translatable="yes">PDF file</attribute>
-              <attribute name="action">win.export</attribute>
-              <attribute name="target">pdffile</attribute>
-            </item>
-          </section>
-        </submenu>
-        <item>
-          <attribute name="label" translatable="yes">Close</attribute>
-          <attribute name="action">win.close</attribute>
-        </item>
-      </section>
-    </submenu>
-    <submenu>
       <attribute name="label" translatable="yes">Edit</attribute>
       <section>
         <item>
@@ -243,6 +172,85 @@ MENU_XML = """
   </menu>
 </interface>
 """
+
+CHART_XML = """
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <menu id="ChartUI">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">New</attribute>
+        <attribute name="action">win.newChart</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Open</attribute>
+        <attribute name="action">win.openChart</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Save</attribute>
+        <attribute name="action">win.saveChart</attribute>
+      </item>
+    </section>
+    <submenu>
+      <attribute name="label" translatable="yes">Import</attribute>
+      <section>
+        <item>
+          <attribute name="label" translatable="yes">Oroboros (*.xml)</attribute>
+          <attribute name="action">win.import</attribute>
+          <attribute name="target">importOroboros</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Astrolog (*.dat)</attribute>
+          <attribute name="action">win.import</attribute>
+          <attribute name="target">importAstrolog</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Skylendar (*.skif)</attribute>
+          <attribute name="action">win.import</attribute>
+          <attribute name="target">importSkylendar</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Zet8 Dbase (*.zbs)</attribute>
+          <attribute name="action">win.import</attribute>
+          <attribute name="target">importZet8</attribute>
+        </item>
+      </section>
+    </submenu>
+    <submenu>
+      <attribute name="label" translatable="yes">Export</attribute>
+      <section>
+        <item>
+          <attribute name="label" translatable="yes">PNG file</attribute>
+          <attribute name="action">win.export</attribute>
+          <attribute name="target">pngfile</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">JPG file</attribute>
+          <attribute name="action">win.export</attribute>
+          <attribute name="target">jpgfile</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">SVG file</attribute>
+          <attribute name="action">win.export</attribute>
+          <attribute name="target">svgfile</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">PDF file</attribute>
+          <attribute name="action">win.export</attribute>
+          <attribute name="target">pdffile</attribute>
+        </item>
+      </section>
+    </submenu>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Close</attribute>
+        <attribute name="action">win.close</attribute>
+      </item>
+    </section>
+  </menu>
+</interface>
+"""
+
 EVENT_XML = """
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
@@ -266,21 +274,27 @@ EVENT_XML = """
   </menu>
 </interface>
 """
-M_ITEM ="""      <item>
-        <attribute name="label" translatable="yes">$label</attribute>
-        <attribute name="action">win.$db</attribute>
-        <attribute name="target" type="i">$idx</attribute>
-      </item>"""
+
 BEGIN_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <menu id="UpdateUI">
     <section>
 """
+E_ITEM = """      <item>
+        <attribute name="label" translatable="yes">empty</attribute>
+        <attribute name="action">win.empty</attribute>
+      </item>"""
+M_ITEM = """      <item>
+        <attribute name="label" translatable="yes">$label</attribute>
+        <attribute name="action">win.$db</attribute>
+        <attribute name="target" type="i">$idx</attribute>
+      </item>"""
 END_XML = """
     </section>
   </menu>
 </interface>
 """
+
 #basics
 import math, sys, os.path, datetime, socket, gettext, codecs, webbrowser, pytz
 
@@ -308,14 +322,16 @@ from openastromod import zonetab, geoname, importfile, dignities, swiss as ephem
 
 APPLICATION_ID = "org.openastro.AstroApp"
 
+#for debugging set to True
+DEBUG = False
 LOCAL = False
 if "--local" in sys.argv:
 	LOCAL = True
-#for debugging set to True
-DEBUG = False
-VERSION = "1.1.72"
+#maximal number of items of history
+LIMIT=10
 #radius of zodiac
 RADIUS = 240
+VERSION = "1.1.80"
 # default dimensions of SVG viewBox, ratio shouls be near sqrt(2) = 1.41421356
 # DIN A4  66 dpi  772,2 x  546,0 ratio 1,41429
 # DIN A4  72 dpi  841,9 x  595,3 ratio 1,41424
@@ -482,7 +498,7 @@ class openAstroSqlite:
 		list=self.cursor.fetchall()
 		self.tables={}
 		for i in range(len(list)):
-				self.tables[list[i][0]]=1
+			self.tables[list[i][0]]=1
 
 		#get table names from sqlite_master for peopledb
 		sql='SELECT name FROM sqlite_master'
@@ -490,7 +506,7 @@ class openAstroSqlite:
 		list=self.pcursor.fetchall()
 		self.ptables={}
 		for i in range(len(list)):
-				self.ptables[list[i][0]]=1
+			self.ptables[list[i][0]]=1
 
 		#check for event_natal table in peopledb
 		self.ptable_event_natal = {
@@ -550,15 +566,15 @@ class openAstroSqlite:
 		if self.dbcheck:
 			dprint('dbcheck astrodb.astrocfg')
 			default = {
-							"version":str(app.cfg.version),
-							"use_geonames.org":"0",
-							"houses_system":"P",
-							"language":"default",
-							"postype":"geo",
-							"chartview":"traditional",
-							"zodiactype":"tropical",
-							"siderealmode":"FAGAN_BRADLEY"
-						 }
+				"version":str(app.cfg.version),
+				"use_geonames.org":"0",
+				"houses_system":"P",
+				"language":"default",
+				"postype":"geo",
+				"chartview":"traditional",
+				"zodiactype":"tropical",
+				"siderealmode":"FAGAN_BRADLEY"
+			 }
 			for k, v in default.items():
 				sql='INSERT OR %s INTO astrocfg (name,value) VALUES(?,?)' % (self.dbpurge)
 				self.cursor.execute(sql,(k,v))
@@ -572,8 +588,6 @@ class openAstroSqlite:
 		#install language
 		self.setLanguage(self.astrocfg['language'])
 		self.lang_label=LANGUAGES_LABEL
-
-
 		#fix inconsitencies between in people's database
 		if self.dbcheck:
 			sql='PRAGMA table_info(event_natal)'
@@ -592,8 +606,8 @@ class openAstroSqlite:
 			if vacuum:
 				sql = "VACUUM"
 				self.pcursor.execute(sql)
-				dprint('dbcheck peopledb.event_natal: updating table definitions!')
 
+				dprint('dbcheck peopledb.event_natal: updating table definitions!')
 
 		#check for history table in astrodb
 		if 'history' not in self.tables:
@@ -603,6 +617,7 @@ class openAstroSqlite:
 			 	,geolat VARCHAR(50), altitude VARCHAR(50), location VARCHAR(150), timezone VARCHAR(50)\
 			 	,notes VARCHAR(500), image VARCHAR(250), countrycode VARCHAR(2), geonameid INTEGER, extra VARCHAR(250))'
 			self.cursor.execute(sql)
+
 			dprint('creating sqlite table history in astrodb')
 
 		#fix inconsitencies between 0.6x and 0.7x in history table
@@ -637,6 +652,7 @@ class openAstroSqlite:
 			if vacuum:
 				sql = "VACUUM"
 				self.cursor.execute(sql)
+
 				dprint('dbcheck: updating history table definitions!')
 
 		#check for settings_aspect table in astrodb
@@ -646,6 +662,7 @@ class openAstroSqlite:
 				 ,is_major INTEGER, is_minor INTEGER, orb VARCHAR(5))'
 			self.cursor.execute(sql)
 			self.dbcheck=True
+
 			dprint('creating sqlite table settings_aspect in astrodb')
 
 		#if update, check if everything is in order
@@ -680,7 +697,6 @@ class openAstroSqlite:
 			if vacuum:
 				sql = "VACUUM"
 				self.cursor.execute(sql)
-
 		#default values for settings_aspect (if dbcheck)
 		if self.dbcheck:
 			dprint('dbcheck astrodb.settings_aspect')
@@ -699,13 +715,13 @@ class openAstroSqlite:
 				VALUES(%s,"%s","%s",%s,%s,%s,%s,"%s")' % ( self.dbpurge,degree[i],name[i],color[i],visible[i],
 				visible_grid[i],is_major[i],is_minor[i],orb[i] )
 				self.cursor.execute(sql)
-
 		#check for colors table in astrodb
 		if 'color_codes' not in self.tables:
 			sql='CREATE TABLE IF NOT EXISTS color_codes (name VARCHAR(50) UNIQUE\
 				 ,code VARCHAR(50))'
 			self.cursor.execute(sql)
 			self.dbcheck=True
+
 			dprint('creating sqlite table color_codes in astrodb')
 
 		#default values for colors (if dbcheck)
@@ -803,13 +819,13 @@ class openAstroSqlite:
 				(name, code)\
 				VALUES("%s","%s")' % ( self.dbpurge , k, v )
 				self.cursor.execute(sql)
-
 		#check for label table in astrodb
 		if 'label' not in self.tables:
 			sql='CREATE TABLE IF NOT EXISTS label (name VARCHAR(150) UNIQUE\
 				 ,value VARCHAR(200))'
 			self.cursor.execute(sql)
 			self.dbcheck=True
+
 			dprint('creating sqlite table label in astrodb')
 
 		#default values for label (if dbcheck)
@@ -845,7 +861,6 @@ class openAstroSqlite:
 				(name, value)\
 				VALUES("%s","%s")' % ( self.dbpurge , k, v )
 				self.cursor.execute(sql)
-
 		#check for settings_planet table in astrodb
 		self.table_settings_planet={
 				"id":"INTEGER UNIQUE",
@@ -866,8 +881,8 @@ class openAstroSqlite:
 			 	,visible_aspect_grid INTEGER)'
 			self.cursor.execute(sql)
 			self.dbcheck=True
-			dprint('creating sqlite table settings_planet in astrodb')
 
+			dprint('creating sqlite table settings_planet in astrodb')
 
 		#default values for settings_planet (if dbcheck)
 		if self.dbcheck:
@@ -952,7 +967,6 @@ class openAstroSqlite:
 			'-1','-1','-1','-1','-1','-1','-1',
 			'-1','-1','-1','-1','-1','-1','-1',
 			'-1','-1','-1','-1','-1','-1','-1']
-
 			#if update, check if everything is in order with settings_planet
 			sql='PRAGMA table_info(settings_planet)'
 			self.cursor.execute(sql)
@@ -976,7 +990,6 @@ class openAstroSqlite:
 			if vacuum:
 				sql = "VACUUM"
 				self.cursor.execute(sql)
-
 			#insert values for planets that don't exists
 			for i in range(len(self.value_settings_planet['name'])):
 				sql='INSERT OR %s INTO settings_planet VALUES(?,?,?,?,?,?,?,?,?,?)'%(self.dbpurge)
@@ -992,7 +1005,6 @@ class openAstroSqlite:
 						self.value_settings_planet['visible_aspect_grid'][i]
 						)
 				self.cursor.execute(sql,values)
-
 		#commit initial changes
 		self.updateHistory()
 		self.link.commit()
@@ -1139,7 +1151,7 @@ class openAstroSqlite:
 		self.cursor.execute(sql)
 		self.history = self.cursor.fetchall()
 		#check if limit is exceeded
-		limit=10
+		limit=LIMIT
 		if len(self.history) > limit:
 			sql = "DELETE FROM history WHERE id < '"+str(self.history[len(self.history)-limit][0])+"'"
 			self.cursor.execute(sql)
@@ -1922,64 +1934,60 @@ class AstroWindow(Gtk.ApplicationWindow):
 		return
 
 	def updateUI(self):
-		"""
-		#remove old actiongroup
-		try:		
-			self.uimanager.remove_action_group(self.actiongroup)
-		except AttributeError:
-			pass
-					
-		#create new actiongroup
-		self.actiongroup = Gtk.ActionGroup('UIManagerExample')
-		#remove old ui's
-		try:		
-			self.uimanager.remove_ui(self.ui_mid_history)
-			self.uimanager.remove_ui(self.ui_mid_quickopendatabase)
-		except AttributeError:
-			pass
-		#new merge id's
-		self.ui_mid_history = self.uimanager.new_merge_id()
-		self.ui_mid_quickopendatabase = self.uimanager.new_merge_id()
-		# Add actions
-		self.actiongroup.add_actions(self.actions)
-		self.actiongroup.get_action('Quit').set_property('short-label', _('Quit') )
-		self.actiongroup.add_radio_actions([
-			('z80', None, '_80%', None,'80%', 0),
-			('z100', Gtk.STOCK_ZOOM_100, '_100%', None,'100%', 1),
-         ('z150', None, '_150%', None,'150%', 2),
-         ('z200', None, '_200%', None,'200%', 3),
-         ], 1, self.zoom)
-		"""
-		#create history actions
-		history = app.db.history
-		# last will be first
-		history.reverse()
-		for i in range(10):
-			if i < len(history):
-				label=history[i][1]
-				visible=True
-				list=history[i]
-			else:
-				label='empty'
-				visible=False
-				list=[]
-			"""
-			self.uimanager.add_ui(self.ui_mid_history, '/MenuBar/File/History', 'history%i'%(i), 'history%i'%(i), Gtk.UIManagerItemType.MENUITEM, False)
-			action=Gtk.Action('history%i'%(i),label,None,False)
-			action.connect('activate',self.updateChartList,list)
-			action.set_visible(visible)			
-			self.actiongroup.add_action(action)
-			"""
+		#get menubar of window
+		menu = app.get_menubar()
+		#create history actions, last will be first
+		entries = app.db.history
+		l = len(entries)
+		t_item = Template(M_ITEM)
+		items = []
+		if len(entries) > 0:
+			#maximal 10 entries
+			i = LIMIT
+			for entry in reversed(entries):
+				i -= 1
+				l -= 1
+				if (i < 0) or (l < 0):
+					break
+				# substitute id and name
+				item = t_item.substitute(db='historydb', idx=entry[0], label=entry[1])
+				items.append(item)
+			history_items = '\n'.join(items)
+		if self.first_time:
+			#generate 'Chart' menu
+			chart_builder = Gtk.Builder()
+			chart_builder.add_from_string(CHART_XML)
+			self.chart_menu = chart_builder.get_object("ChartUI")
+			#make action for 'quickopendb'
+			history_action = Gio.SimpleAction.new_stateful(
+				"historydb",
+				GLib.VariantType.new('i'),
+				GLib.Variant.new_int32(value=0)
+			)
+			history_action.connect("activate", self.historydb_callback)
+			self.add_action(history_action)
+		else:
+			menu.remove(0)
+		if len(items) > 0:
+			history_xml = BEGIN_XML + history_items + END_XML
+		else:
+			#insert 'empty' menu item
+			history_xml = BEGIN_XML + E_ITEM + END_XML
+		update_builder = Gtk.Builder()
+		update_builder.add_from_string(history_xml)
+		history_menu = update_builder.get_object("UpdateUI")
+		self.chart_menu.insert_submenu(3, 'History', history_menu)
+		#becomes first item in menubar
+		menu.prepend_submenu('Chart', self.chart_menu)
 		# create 'Quick Open' actions
 		self.DB = app.db.getDatabase()
 		t_item = Template(M_ITEM)
 		items = []
-		for i in range(len(self.DB)):
+		for entry in self.DB:
 			# substitute id and name
-			item = t_item.substitute(db='quickopendb', idx=i, label=self.DB[i]['name'])
+			item = t_item.substitute(db='quickopendb', idx=entry['id'], label=entry['name'])
 			items.append(item)
 		quick_open_items = '\n'.join(items)
-		menu = app.get_menubar()
 		if self.first_time:
 			#generate 'Event' menu
 			event_builder = Gtk.Builder()
@@ -1989,24 +1997,39 @@ class AstroWindow(Gtk.ApplicationWindow):
 			quick_open_action = Gio.SimpleAction.new_stateful(
 				"quickopendb",
 				GLib.VariantType.new('i'),
-				GLib.Variant.new_int32(value=1)
+				GLib.Variant.new_int32(value=0)
 			)
 			quick_open_action.connect("activate", self.quickopendb_callback)
 			self.add_action(quick_open_action)
-		quick_open_xml = BEGIN_XML + quick_open_items + END_XML
+		else:
+			menu.remove(2)
+		if len(items) > 0:
+			quick_open_xml = BEGIN_XML + quick_open_items + END_XML
+		else:
+			#insert 'empty' menu item
+			quick_open_xml = BEGIN_XML + E_ITEM + END_XML
 		update_builder = Gtk.Builder()
 		update_builder.add_from_string(quick_open_xml)
 		quick_open_menu = update_builder.get_object("UpdateUI")
 		#self.event_menu.insert_item(1, Gio.MenuItem.new_submenu('Quick Open Database', quick_open_menu))
 		self.event_menu.insert_submenu(1, 'Quick Open Database', quick_open_menu)
-		if not self.first_time:
-			menu.remove(2)
 		menu.insert_submenu(2, 'Event', self.event_menu)
+
+	def historydb_callback(self, action, parameter):
+		idx = parameter.get_int32()
+		action.set_state(parameter)
+		for entry in app.db.history:
+			if entry['id'] == idx:
+				self.updateChartList(None, entry)
+				break
 
 	def quickopendb_callback(self, action, parameter):
 		idx = parameter.get_int32()
 		action.set_state(parameter)
-		self.updateChartList(None, self.DB[idx])
+		for entry in self.DB:
+			if entry['id'] == idx:
+				self.updateChartList(None, entry)
+				break
 
 	def eventDataNew_callback(self, action, parameter):
 		# default location
@@ -2452,12 +2475,10 @@ class AstroWindow(Gtk.ApplicationWindow):
 		self.eH.get_text() == '%(#)02d' % {'#':app.hour_loc} and \
 		self.eM.get_text() == '%(#)02d' % {'#':app.minute_loc} and \
 		self.eS.get_text() == '%(#)02d' % {'#':app.second_loc}:
-			if self.iconn and \
-self.geoCC.get_text() == app.countrycode and self.geoLoc.get_text() == app.location.partition(',')[0]:
+			if self.iconn and self.geoCC.get_text() == app.countrycode and self.geoLoc.get_text() == app.location.partition(',')[0]:
 				# go ahead ;)
 				self.window2.destroy()
 				return
-
 		#apply data
 		self.eventDataApply(widget)
 		if self.geoLocFound:
