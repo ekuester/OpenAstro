@@ -16,22 +16,33 @@
     You should have received a copy of the GNU General Public License
     along with OpenAstro.org. If not, see <http://www.gnu.org/licenses/>.
 """
+"""
+# https://docs.gtk.org/gtk4/
+# https://pygobject.gnome.org/tutorials/gtk4.html
+# https://discourse.gnome.org/t/scaling-images-with-cairo-is-much-slower-in-gtk4/7701
+# https://blog.gtk.org/2018/03/16/textures-and-paintables/
+"""
 
-""" https://tecnocode.co.uk/misc/platform-demos/MenuBar.py.xhtml """
 MENU_XML = """
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <menu id="MenuBar">
     <submenu>
-      <attribute name="label" translatable="yes">Edit</attribute>
+    <attribute name="label" translatable="yes">Application</attribute>
       <section>
         <item>
-          <attribute name="label" translatable="yes">Copy</attribute>
-          <attribute name="action">win.copy</attribute>
+          <attribute name="action">win.maximize</attribute>
+          <attribute name="label" translatable="yes">Maximize</attribute>
+        </item>
+      </section>
+      <section>
+        <item>
+          <attribute name="action">win.about</attribute>
+          <attribute name="label" translatable="yes">_About</attribute>
         </item>
         <item>
-          <attribute name="label" translatable="yes">Paste</attribute>
-          <attribute name="action">win.paste</attribute>
+          <attribute name="action">app.quit</attribute>
+          <attribute name="label" translatable="yes">_Quit</attribute>
         </item>
       </section>
     </submenu>
@@ -59,6 +70,8 @@ MENU_XML = """
           <attribute name="label" translatable="yes">Transit Chart</attribute>
           <attribute name="action">win.specialTransit</attribute>
         </item>
+      </section>
+      <section>
         <item>
           <attribute name="label" translatable="yes">Synastry Chart</attribute>
           <attribute name="action">win.chartType</attribute>
@@ -74,6 +87,8 @@ MENU_XML = """
           <attribute name="action">win.chartType</attribute>
           <attribute name="target">Combine</attribute>
         </item>
+      </section>
+      <section>
         <item>
           <attribute name="label" translatable="yes">Solar Return</attribute>
           <attribute name="action">win.specialSolar</attribute>
@@ -309,39 +324,99 @@ from string import Template
 from xml.dom.minidom import parseString
 
 import gi
-from gi import require_version
-gi.require_version("Gtk", "3.0")
-gi.require_version("Gdk", "3.0")
+gi.require_version("Gtk", "4.0")
+gi.require_version("Gdk", "4.0")
 gi.require_version('Rsvg', '2.0')
-from gi.repository import Gtk, Gdk, GdkPixbuf, Gio, GLib, GObject, Rsvg, cairo
-from gi.repository.GdkPixbuf import Pixbuf, InterpType
+from gi.repository import GLib, Gio, Gtk, Gdk, GObject, Rsvg
 
 #local modukes
 from openastromod import zonetab, geoname, importfile, dignities, swiss as ephemeris
 
-APPLICATION_ID = "org.openastro.AstroApp"
-
 #for debugging set to True
 DEBUG = False
+#for debugging set to True
 LOCAL = False
 if "--local" in sys.argv:
 	LOCAL = True
-#maximal number of items of history
-LIMIT=10
 #radius of zodiac
 RADIUS = 240
-VERSION = "1.1.80"
-# default dimensions of SVG viewBox, ratio shouls be near sqrt(2) = 1.41421356
-# DIN A4  66 dpi  772,2 x  546,0 ratio 1,41429
-# DIN A4  72 dpi  841,9 x  595,3 ratio 1,41424
-# DIN A4  96 dpi 1122,5 x  793,7 ratio 1,41426
-# DIN A4 300 dpi 3507,9 x 2480,3 ratio 1,41430
-#height of menubar
-BARY = 32
+OFFSET = 64
+RATIO = math.sqrt(2)
+VERSION = "1.1.100"
+
+APPLICATION_ID = "org.openastro.AstroApp"
+#maximal number of items of history
+LIMIT=10
 #dimensions of chart
 CHARTX = 772.2 
 CHARTY = 546.0
-RATIO = math.sqrt(2)
+#radius of zodiac
+RADIUS = 240
+
+""" Construct FileFilters """
+FILTER_ALL_FILES = Gtk.FileFilter()
+FILTER_ALL_FILES.set_name(name='ALL')
+FILTER_ALL_FILES.add_pattern(pattern='*')
+
+FILTER_DAT_FILES = Gtk.FileFilter()
+FILTER_DAT_FILES.set_name(name='DAT')
+FILTER_DAT_FILES.add_pattern(pattern='*.dat')
+FILTER_DAT_FILES.add_mime_type(mime_type='chart/dat')
+
+FILTER_JPG_FILES = Gtk.FileFilter()
+FILTER_JPG_FILES.set_name(name='JPG')
+FILTER_JPG_FILES.add_pattern(pattern='*.jpg')
+FILTER_JPG_FILES.add_mime_type(mime_type='image/jpg')
+
+FILTER_OAC_FILES = Gtk.FileFilter()
+FILTER_OAC_FILES.set_name(name='OAC')
+FILTER_OAC_FILES.add_pattern(pattern='*.oac')
+FILTER_OAC_FILES.add_mime_type(mime_type='chart/oac')
+
+FILTER_PDF_FILES = Gtk.FileFilter()
+FILTER_PDF_FILES.set_name(name='PDF')
+FILTER_PDF_FILES.add_pattern(pattern='*.pdf')
+FILTER_PDF_FILES.add_mime_type(mime_type='application/pdf')
+
+FILTER_PNG_FILES = Gtk.FileFilter()
+FILTER_PNG_FILES.set_name(name='PNG')
+FILTER_PNG_FILES.add_pattern(pattern='*.png')
+FILTER_PNG_FILES.add_mime_type(mime_type='image/png')
+
+FILTER_PY_FILES = Gtk.FileFilter()
+FILTER_PY_FILES.set_name(name='Python')
+FILTER_PY_FILES.add_pattern(pattern='*.py')
+FILTER_PY_FILES.add_mime_type(mime_type='text/x-python')
+
+FILTER_SKIF_FILES = Gtk.FileFilter()
+FILTER_SKIF_FILES.set_name(name='SKIF')
+FILTER_SKIF_FILES.add_pattern(pattern='*.skif')
+FILTER_SKIF_FILES.add_mime_type(mime_type='chart/skif')
+
+FILTER_SQL_FILES = Gtk.FileFilter()
+FILTER_SQL_FILES.set_name(name='SQL')
+FILTER_SQL_FILES.add_pattern(pattern='*.sql')
+FILTER_SQL_FILES.add_mime_type(mime_type='database/sql')
+
+FILTER_SVG_FILES = Gtk.FileFilter()
+FILTER_SVG_FILES.set_name(name='SVG')
+FILTER_SVG_FILES.add_pattern(pattern='*.svg')
+FILTER_SVG_FILES.add_mime_type(mime_type='image/svg')
+
+FILTER_TXT_FILES = Gtk.FileFilter()
+FILTER_TXT_FILES.set_name(name='TXT')
+FILTER_TXT_FILES.add_pattern(pattern='*.txt')
+FILTER_TXT_FILES.add_mime_type(mime_type='text/plain')
+
+FILTER_XML_FILES = Gtk.FileFilter()
+FILTER_XML_FILES.set_name(name='XML')
+FILTER_XML_FILES.add_pattern(pattern='*.xml')
+FILTER_XML_FILES.add_mime_type(mime_type='application/xml')
+
+FILTER_ZBS_FILES = Gtk.FileFilter()
+FILTER_ZBS_FILES.set_name(name='ZBS')
+FILTER_ZBS_FILES.add_pattern(pattern='*.zbs')
+FILTER_ZBS_FILES.add_mime_type(mime_type='chart/zbs')
 
 #directories
 if LOCAL:
@@ -408,8 +483,9 @@ def dprint(str):
 	if "--debug" in sys.argv or DEBUG:
 		print('%s' % str)
 
-""" config class """
-class openAstroCfg:
+
+""" OpenAstro configuration class """
+class OpenAstroCfg:
 	def __init__(self):
 		self.version = VERSION
 		dprint("-------------------------------")
@@ -460,18 +536,8 @@ class openAstroCfg:
 			self.famousdb = os.path.join(DATADIR, 'famous.sql' )
 		return
 
-	def checkSwissEphemeris(self,num):	
-		#00 = -01-600
-		#06 = 600 - 1200
-		#12 = 1200 - 1800
-		#18 = 1800 - 2400
-		#24 = 2400 - 3000
-		seas='ftp://ftp.astro.com/pub/swisseph/ephe/seas_12.se1'
-		semo='ftp://ftp.astro.com/pub/swisseph/ephe/semo_12.se1'
-		sepl='ftp://ftp.astro.com/pub/swisseph/ephe/sepl_12.se1'
-
 #Sqlite database
-class openAstroSqlite:
+class OpenAstroSqlite:
 	def __init__(self):
 		self.dbcheck=False
 		self.dbpurge="IGNORE"
@@ -1354,28 +1420,62 @@ class openAstroSqlite:
 		self.link.close()
 		self.plink.close()
 
+class ViewSVG(Gtk.Widget):
+	def __init__(self, path, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		# loads now SVG files, Pixbuf not needed anymore
+		self.setupSVG(path)
+
+	def setupSVG(self, path):
+		self.texture = Gdk.Texture.new_from_filename(path)
+		self.scale = 1
+
+	def do_snapshot(self, snapshot):
+		width = self.texture.get_intrinsic_width() * self.scale
+		height = self.texture.get_intrinsic_height() * self.scale
+		self.texture.snapshot(snapshot, width, height)
+
+	def do_get_request_mode(self):
+		return Gtk.SizeRequestMode.CONSTANT_SIZE
+
+	def do_measure(self, orientation, for_size):
+		if orientation == Gtk.Orientation.HORIZONTAL:
+			width = self.texture.get_intrinsic_width() * self.scale
+			return (width, width, -1, -1)
+		else:
+			height = self.texture.get_intrinsic_height() * self.scale
+			return (height, height, -1, -1)
+
+def dprint(str):
+	""" debug print function """
+	if "--debug" in sys.argv or DEBUG:
+		print('%s' % str)
+
 class AstroWindow(Gtk.ApplicationWindow):
-	def __init__(self, app):
-		Gtk.Window.__init__(self, title="org.OpenAstro Application", application=app)
-		self.set_icon_from_file(app.cfg.iconWindow)
-		# window is not maximized
-		self.window_state = False
-		# This will be in the windows group and have the "win" prefix
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+		self.props.show_menubar = True
+		""" >>> set icon changed in GTK4 """
+
+		#belonges in the windows group and hence have the 'win' prefix
 		max_action = Gio.SimpleAction.new_stateful(
-			"maximize",
-			None,
-			GLib.Variant.new_boolean(False)
+			"maximize", None, GLib.Variant.new_boolean(False)
 		)
 		max_action.connect("change-state", self.on_maximize_toggle)
 		self.add_action(max_action)
+
 		# Keep it in sync with the actual state
 		self.connect(
-			"notify::is-maximized",
-			lambda obj, pspec: max_action.set_state(
-				GLib.Variant.new_boolean(obj.props.is_maximized)
+			"notify::maximized",
+			lambda obj, _pspec: max_action.set_state(
+				GLib.Variant.new_boolean(obj.props.maximized)
 			),
 		)
-		self.connect('window-state-event', self.on_window_state_event)
+		#Menuitem 'About'
+		about_action = Gio.SimpleAction.new("about", None)
+		about_action.connect("activate", self.about_callback)
+		self.add_action(about_action)
 
 		# Menu 'Chart'
 		newChart_action = Gio.SimpleAction.new("newChart", None)
@@ -1387,7 +1487,6 @@ class AstroWindow(Gtk.ApplicationWindow):
 		saveChart_action = Gio.SimpleAction.new("saveChart", None)
 		saveChart_action.connect("activate", self.saveChart_callback)
 		self.add_action(saveChart_action)
-
 		 # Menu item 'Import'
 		import_action = Gio.SimpleAction.new_stateful(
 			"import", GLib.VariantType.new('s'), #submit a string type
@@ -1395,7 +1494,6 @@ class AstroWindow(Gtk.ApplicationWindow):
 		)
 		import_action.connect("activate", self.import_callback)
 		self.add_action(import_action)
-
 		 # Menu item 'Export'
 		export_action = Gio.SimpleAction.new_stateful(
 			"export", GLib.VariantType.new('s'), #submit a string type
@@ -1403,22 +1501,10 @@ class AstroWindow(Gtk.ApplicationWindow):
 		)
 		export_action.connect("activate", self.export_callback)
 		self.add_action(export_action)
-
+		# Menu item 'Close'
 		close_action = Gio.SimpleAction.new("close", None)
 		close_action.connect("activate", self.on_close)
 		self.add_action(close_action)
-
-		# Menu 'Edit'
-		copy_action = Gio.SimpleAction.new("copy", None)
-		copy_action.connect("activate", self.copy_callback)
-		# added to the window
-		self.add_action(copy_action)
-		# action without a state created (name, parameter type)
-		paste_action = Gio.SimpleAction.new("paste", None)
-		# connected with the callback function
-		paste_action.connect("activate", self.paste_callback)
-		# added to the window
-		self.add_action(paste_action)
 
 		# Menu 'Event'
 		event_action = Gio.SimpleAction.new("eventData", None)
@@ -1467,11 +1553,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 		self.add_action(cuspaspects_action)
 
 		# Menu 'Zoom'
-		zoom_action = Gio.SimpleAction.new_stateful(
-			"zoom",
-			GLib.VariantType.new('s'),
-			GLib.Variant.new_string('z100')
-		)
+		zoom_action = Gio.SimpleAction.new_stateful("zoom", GLib.VariantType.new('s'), GLib.Variant.new_string('zIn'))
 		zoom_action.connect("activate", self.zoom_callback)
 		self.add_action(zoom_action)
 		app.set_accels_for_action(detailed_action_name="win.zoom::zIn", accels=["<Ctrl>plus"])
@@ -1486,51 +1568,34 @@ class AstroWindow(Gtk.ApplicationWindow):
 		importdb_action.connect("activate", self.importdb_callback)
 		self.add_action(importdb_action)
 
-		# Menu 'Help'
-		about_action = Gio.SimpleAction.new("about", None)
-		# action connected to the callback function
-		about_action.connect("activate", self.about_callback)
-		# action added to the application
-		self.add_action(about_action)
-
 		self.first_time = True
 		self.updateUI()
 
-		box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=0)
-		viewport = Gtk.Viewport()
+		# display astrological chart
+		box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		self.set_child(box)
+		scrolled_window = Gtk.ScrolledWindow()
 		# Draw svg pixbuf
 		chart_name = app.makeSVG()
 		#drawing_area to render SVG
-		self.draw = ViewSVG(chart_name)
-		self.draw.window_state = False
-		self.unmaximize()
-		scrolled_window = Gtk.ScrolledWindow()
-		scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-		# Pack
-		viewport.add(self.draw)
-		scrolled_window.add(viewport)
-		"""
-		# make first SVG or use earlier generated
-		self.svg_name = os.path.join(app.cfg.tmpdir, chart_name)
-		if not os.path.exists(self.svg_name):
-			self.svg_name = app.makeSVG()
-		self.drawing_area = Gtk.DrawingArea()
-		self.drawing_area.connect("draw", self.expose)
-		# load svg into handle
-		self.svg = Rsvg.Handle.new_from_file(self.svg_name)
-		self.width = self.svg.get_property("width")
-		self.height = self.svg.get_property("height")
-		self.drawing_area.set_size_request(self.width, self.height)
-		# prepare viewport for display
-		self.viewport = Rsvg.Rectangle()
-		scrolled_window = Gtk.ScrolledWindow()
-		scrolled_window.add(self.drawing_area)
-		scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-		"""
-		box.pack_start(scrolled_window, expand=True, fill=True, padding=0)
-		#self.set_default_size(self.width, self.height)
-		self.add(box)
-		self.resize(app.width, app.height)
+		self.image = ViewSVG(chart_name)
+		self.image.set_vexpand(True)
+		self.image.set_hexpand(True)
+		self.image.set_valign(Gtk.Align.CENTER)
+		self.image.set_halign(Gtk.Align.CENTER)
+		scrolled_window.set_child(self.image)
+		box.append(scrolled_window)
+
+	def on_change_label_state(self, action, value):
+		action.set_state(value)
+		self.label.set_text(value.get_string())
+
+	def on_maximize_toggle(self, action, value):
+		action.set_state(value)
+		if value.get_boolean():
+			self.maximize()
+		else:
+			self.unmaximize()
 
 	"""
 	Function to check if we have an internet connection
@@ -1576,6 +1641,105 @@ class AstroWindow(Gtk.ApplicationWindow):
 			s.close()
 		return
 
+	def updateUI(self):
+		#get menubar of application
+		parent_app = self.get_application()
+		menu = parent_app.get_menubar()
+		#create history actions, last will be first
+		entries = app.db.history
+		l = len(entries)
+		t_item = Template(M_ITEM)
+		items = []
+		if len(entries) > 0:
+			#maximal 10 entries
+			i = LIMIT
+			for entry in reversed(entries):
+				i -= 1
+				l -= 1
+				if (i < 0) or (l < 0):
+					break
+				# substitute id and name
+				item = t_item.substitute(db='historydb', idx=entry[0], label=entry[1])
+				items.append(item)
+			history_items = '\n'.join(items)
+		if self.first_time:
+			#generate 'Chart' menu
+			chart_builder = Gtk.Builder()
+			chart_builder.add_from_string(CHART_XML)
+			self.chart_menu = chart_builder.get_object("ChartUI")
+			#make action for 'quickopendb'
+			history_action = Gio.SimpleAction.new_stateful(
+				"historydb",
+				GLib.VariantType.new('i'),
+				GLib.Variant.new_int32(value=0)
+			)
+			history_action.connect("activate", self.historydb_callback)
+			self.add_action(history_action)
+		else:
+			menu.remove(0)
+		if len(items) > 0:
+			history_xml = BEGIN_XML + history_items + END_XML
+		else:
+			#insert 'empty' menu item
+			history_xml = BEGIN_XML + E_ITEM + END_XML
+		update_builder = Gtk.Builder()
+		update_builder.add_from_string(history_xml)
+		history_menu = update_builder.get_object("UpdateUI")
+		self.chart_menu.insert_submenu(3, 'History', history_menu)
+		#becomes first item in menubar
+		menu.insert_submenu(1, 'Chart', self.chart_menu)
+		# create 'Quick Open' actions
+		self.DB = app.db.getDatabase()
+		t_item = Template(M_ITEM)
+		items = []
+		for entry in self.DB:
+			# substitute id and name
+			item = t_item.substitute(db='quickopendb', idx=entry['id'], label=entry['name'])
+			items.append(item)
+		quick_open_items = '\n'.join(items)
+		if self.first_time:
+			#generate 'Event' menu
+			event_builder = Gtk.Builder()
+			event_builder.add_from_string(EVENT_XML)
+			self.event_menu = event_builder.get_object("EventUI")
+			#make action for 'quickopendb'
+			quick_open_action = Gio.SimpleAction.new_stateful(
+				"quickopendb",
+				GLib.VariantType.new('i'),
+				GLib.Variant.new_int32(value=0)
+			)
+			quick_open_action.connect("activate", self.quickopendb_callback)
+			self.add_action(quick_open_action)
+		else:
+			menu.remove(2)
+		if len(items) > 0:
+			quick_open_xml = BEGIN_XML + quick_open_items + END_XML
+		else:
+			#insert 'empty' menu item
+			quick_open_xml = BEGIN_XML + E_ITEM + END_XML
+		update_builder = Gtk.Builder()
+		update_builder.add_from_string(quick_open_xml)
+		quick_open_menu = update_builder.get_object("UpdateUI")
+		self.event_menu.insert_submenu(1, 'Quick Open Database', quick_open_menu)
+		menu.insert_submenu(2, 'Event', self.event_menu)
+		self.first_time = False
+
+	def historydb_callback(self, action, parameter):
+		idx = parameter.get_int32()
+		action.set_state(parameter)
+		for entry in app.db.history:
+			if entry['id'] == idx:
+				self.updateChartList(None, entry)
+				break
+
+	def quickopendb_callback(self, action, parameter):
+		idx = parameter.get_int32()
+		action.set_state(parameter)
+		for entry in self.DB:
+			if entry['id'] == idx:
+				self.updateChartList(None, entry)
+				break
+
 	def updateChartList(self, b, list):
 		""" Update the chart with input list data """
 		app.type = "Radix"
@@ -1605,8 +1769,8 @@ class AstroWindow(Gtk.ApplicationWindow):
 
 	def updateChart(self):
 		chart_name = app.makeSVG()
-		self.draw.setupSVG(chart_name)
-		self.draw.queue_draw()
+		self.image.setupSVG(chart_name)
+		self.image.queue_resize()
 
 	def updateChartData(self):
 		# check for internet connection
@@ -1681,168 +1845,163 @@ class AstroWindow(Gtk.ApplicationWindow):
 		self.ename.set_text(app.name)
 		self.entry2.set_text(' %s: %s\n %s: %s\n %s: %s' % ( _('Latitude'),lat,_('Longitude'),lon,_('Location'),loc) )
 
-	def file_to_open(self, f_filter):
-		""" Get filename to open by FileChooserDialog"""
-		chooser = Gtk.FileChooserDialog(
-			title="Open file...",
-			parent=self,
-			action=Gtk.FileChooserAction.OPEN
-		)
-		chooser.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
-		chooser.set_current_folder(app.cfg.homedir)
-		chooser.add_filter(f_filter)
-		filter = Gtk.FileFilter()
-		filter.set_name(_("All files (*)"))
-		filter.add_pattern("*")
-		response = chooser.run()
-		file_name = None
-		if response == Gtk.ResponseType.OK:
-			file_name = chooser.get_filename()
-		chooser.destroy()
-		return file_name
-
+	""" Open chart in OAC format """
 	def openChart_callback(self, action, parameter):
-		""" Open chart in OAC format """
-		file_filter = Gtk.FileFilter()
-		file_filter.set_name("OAC Astro Files (*.oac)")
-		file_filter.add_mime_type("application/oac")
-		file_filter.add_pattern("*.oac")
-		file_name = self.file_to_open(f_filter=file_filter)
-		if file_name is not None:
-			app.importOAC(file_name)
+		gio_list_store = Gio.ListStore.new(Gtk.FileFilter)
+		gio_list_store.append(item=FILTER_ALL_FILES)
+		gio_list_store.append(item=FILTER_OAC_FILES)
+		gio_list_store.append(item=FILTER_TXT_FILES)
+
+		file_dialog = Gtk.FileDialog.new()
+		file_dialog.set_title(title=_('Open'))
+		file_dialog.set_initial_name(name=_('file-name'))
+		file_dialog.set_modal(modal=True)
+		file_dialog.set_filters(filters=gio_list_store)
+		file_dialog.open(parent=self, callback=self.on_file_dialog_dismissed)
+
+	def on_file_dialog_dismissed(self, file_dialog, gio_task):
+		if gio_task.get_name() == 'gtk_file_dialog_open':
+			try:
+				local_file = file_dialog.open_finish(gio_task)
+			except GLib.Error:
+				return
+			app.importOAC(local_file)
 			self.eventData(False)
-		return
+		elif gio_task.get_name() == 'gtk_file_dialog_save':
+			try:
+				local_file = file_dialog.save_finish(gio_task)
+			except GLib.Error:
+				return
+			app.exportOAC(local_file)
+
+		"""
+		print(f'File name: {local_file.get_basename()}')
+		print(f'File path: {local_file.get_path()}')
+		print(f'File URI: {local_file.get_uri()}\n')
+		"""
+
+	""" Select file to import by FileDialog """
+	def file_to_open(self, filters, name, import_app):
+		file_dialog = Gtk.FileDialog.new()
+		file_dialog.set_title(title=_('Select file to import'))
+		file_dialog.set_initial_name(name)
+		file_dialog.set_modal(modal=True)
+		file_dialog.set_filters(filters=filters)
+		file_dialog.open(parent=self, callback=self.on_open_file_dialog_completed, user_data=import_app)
+
+	def on_open_file_dialog_completed(self, file_dialog, gio_task, import_app):
+		try:
+			local_file = file_dialog.open_finish(gio_task)
+		except GLib.Error:
+			return
+		import_app(local_file)
+		self.updateChart()
 
 	""" Import chart in different formats """
 	def import_callback(self, action, parameter):
 		# mark choosed menu item
 		selected = parameter.get_string()
 		action.set_state(parameter)
-		file_filter = Gtk.FileFilter()
+		gio_filters = Gio.ListStore.new(Gtk.FileFilter)
+		gio_filters.append(item=FILTER_ALL_FILES)
 		#select file formats
 		if selected == 'importOroboros':
-			file_filter.set_name("Oroboros Charts (*.xml)")
-			file_filter.add_mime_type("application/xml")
-			file_filter.add_pattern("*.xml")
-			file_name = self.file_to_open(f_filter=file_filter)
-			if file_name is not None:
-				app.importOroboros(file_name)
-		elif selected == 'importSkylendar':
-			file_filter.set_name("Skylendar Charts (*.skif)")
-			file_filter.add_mime_type("application/skif")
-			file_filter.add_pattern("*.skif")
-			file_name = self.file_to_open(f_filter=file_filter)
-			if file_name is not None:
-				app.importSkylendar(file_name)
+			gio_filters.append(item=FILTER_XML_FILES)
+			self.file_to_open(filters=gio_filters, name='', import_app=app.importOroboros)
 		elif selected == 'importAstrolog':
-			file_filter.set_name("Astrolog Charts (*.dat)")
-			file_filter.add_mime_type("application/dat")
-			file_filter.add_pattern("*.dat")
-			file_name = self.file_to_open(f_filter=file_filter)
-			if file_name is not None:
-				app.importAstrolog(file_name)
+			gio_filters.append(item=FILTER_DAT_FILES)
+			self.file_to_open(filters=gio_filters, name='', import_app=app.importAstrolog)
+		elif selected == 'importSkylendar':
+			gio_filters.append(item=FILTER_SKIF_FILES)
+			self.file_to_open(filters=gio_filters, name='', import_app=app.importSkylendar)
 		elif selected == 'importZet8':
-			file_filter.set_name("Zet8 Databases (*.zbs)")
-			file_filter.add_mime_type("application/zbs")
-			file_filter.add_pattern("*.zbs")
-			file_name = self.file_to_open(f_filter=file_filter)
-			if file_name is not None:
-				app.importZet8(file_name)
-		elif response == Gtk.ResponseType.CANCEL:
-			dprint('Dialog closed, no files selected')
-			return
-		self.updateChart()
+			gio_filters.append(item=FILTER_ZBS_FILES)
+			self.file_to_open(filters=gio_filters, name='', import_app=app.importZet8)
+
+		dprint('Dialog closed, no files selected')
+
 
 	""" Save chart in OAC format """
 	def saveChart_callback(self, action, parameter):
-		file_filter = Gtk.FileFilter()
-		current_name = 'AstroData.oac'
-		file_filter.set_name("OAC Astro Files (*.oac)")
-		file_filter.add_mime_type("application/oac")
-		file_filter.add_pattern("*.oac")
-		file_name = self.file_to_save(f_filter=file_filter, c_name=current_name)
-		if file_name is not None:
-			app.exportOAC(file_name)
+		gio_list_store = Gio.ListStore.new(Gtk.FileFilter)
+		gio_list_store.append(item=FILTER_ALL_FILES)
+		gio_list_store.append(item=FILTER_OAC_FILES)
+		gio_list_store.append(item=FILTER_TXT_FILES)
+		file_dialog = Gtk.FileDialog.new()
+		file_dialog.set_title(title=_('Save Chart'))
+		file_dialog.set_initial_name(name=_('AstroChart.oac'))
+		file_dialog.set_modal(modal=True)
+		file_dialog.set_filters(filters=gio_list_store)
+		file_dialog.save(parent=self, callback=self.on_file_dialog_dismissed)
+
+	""" Select file for saving by FileDialog"""
+	def file_to_save(self, filters, name, export_app):
+		file_dialog = Gtk.FileDialog.new()
+		file_dialog.set_title(title=_('Select file for saving'))
+		file_dialog.set_initial_name(name=name)
+		file_dialog.set_modal(modal=True)
+		file_dialog.set_filters(filters=filters)
+		file_dialog.save(parent=self, callback=self.save_file_dialog_completed, user_data=export_app)
+
+	def save_file_dialog_completed(self, file_dialog, gio_task, export_app):
+		try:
+			local_file = file_dialog.save_finish(gio_task)
+		except GLib.Error:
+			return
+		export_app(local_file)
+
+	def exportPNG(self, local_file):
+		os.system("%s %s %s" % ('magick', app.cfg.tempfilename,"'"+local_file.get_path()+"'"))
+
+	def exportJPG(self, local_file):
+		os.system("%s %s %s" % ('magick', app.cfg.tempfilename,"'"+local_file.get_path()+"'"))
+
+	def exportSVG(self, local_file):
+		copyfile(app.cfg.tempfilename, local_file.get_path())
+
+	def exportPDF(self, local_file):
+		#prepare printing into PDF
+		settings = Gtk.PrintSettings()
+		settings.set_resolution(300)
+		print_op = Gtk.PrintOperation()
+		print_op.set_unit(Gtk.Unit.MM)
+		print_op.set_print_settings(settings)
+		print_op.connect("begin_print", self.doPrintBegin)
+		print_op.connect("draw_page", self.doPrintDraw)
+		print_op.set_export_filename(local_file.get_path())
+		result = print_op.run(Gtk.PrintOperationAction.EXPORT, self)
+		if result == Gtk.PrintOperationResult.ERROR:
+			print_op.cancel()
 		return
 
-	def file_to_save(self, f_filter, c_name):
-		""" Get filename to save by FileChooserDialog"""
-		chooser = Gtk.FileChooserDialog(
-			title="Save file...",
-			parent=self,
-			action=Gtk.FileChooserAction.SAVE
-		)
-		chooser.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK)
-		chooser.set_current_folder(app.cfg.homedir)
-		chooser.set_current_name(c_name)
-		chooser.add_filter(f_filter)
-		filter = Gtk.FileFilter()
-		filter.set_name(_("All files (*)"))
-		filter.add_pattern("*")
-		chooser.add_filter(filter)
-		response = chooser.run()
-		file_name = None
-		if response == Gtk.ResponseType.OK:
-			file_name = chooser.get_filename()
-		chooser.destroy()
-		return file_name
-
+	""" Export chart in different formats """
 	def export_callback(self, action, parameter):
-		""" Export chart in different formats """
 		# mark choosed menu item
 		selected = parameter.get_string()
 		action.set_state(parameter)
-		file_filter = Gtk.FileFilter()
+		gio_filters = Gio.ListStore.new(Gtk.FileFilter)
+		gio_filters.append(item=FILTER_ALL_FILES)
 		#select file formats
 		if selected == 'pngfile':
-			current_name = 'AstroData.png'
-			file_filter.set_name("PNG Image Files (*.png)")
-			file_filter.add_mime_type("image/png")
-			file_filter.add_pattern("*.png")
-			file_name = self.file_to_save(f_filter=file_filter, c_name=current_name)
-			if file_name is not None:
-				# use 'magick'' (formerly 'convert') for image converting
-				os.system("%s %s %s" % ('magick', app.cfg.tempfilename,"'"+file_name+"'"))
-				return
+			initial_name = 'AstroData.png'
+			gio_filters.append(item=FILTER_PNG_FILES)
+			self.file_to_save(filters=gio_filters, name=initial_name, export_app=self.exportPNG)
 		elif selected == 'jpgfile':
-			current_name = 'AstroData.jpg'
-			file_filter.set_name("JPG Image Files (*.jpg)")
-			file_filter.add_mime_type("image/jpg")
-			file_filter.add_pattern("*.jpg")
-			file_name = self.file_to_save(f_filter=file_filter, c_name=current_name)
-			if file_name is not None:
-				os.system("%s %s %s" % ('magick', app.cfg.tempfilename,"'"+file_name+"'"))
-				return
+			initial_name = 'AstroData.jpg'
+			gio_filters.append(item=FILTER_JPG_FILES)
+			self.file_to_save(filters=gio_filters, name=initial_name, export_app=self.exportJPG)
 		elif selected == 'svgfile':
-			current_name = 'AstroData.svg'
-			file_filter.set_name("SVG Image Files (*.svg)")
-			file_filter.add_mime_type("image/svg")
-			file_filter.add_pattern("*.svg")
-			file_name = self.file_to_save(f_filter=file_filter, c_name=current_name)
-			if file_name is not None:
-				copyfile(app.cfg.tempfilename, file_name)
-				return
+			initial_name = 'AstroData.svg'
+			gio_filters.append(item=FILTER_SVG_FILES)
+			self.file_to_save(filters=gio_filters, name=initial_name, export_app=self.exportSVG)
 		elif selected == 'pdffile':
-			current_name = 'AstroData.pdf'
-			file_filter.set_name("PDF Files (*.pdf)")
-			file_filter.add_mime_type("application/pdf")
-			file_filter.add_pattern("*.pdf")
-			file_name = self.file_to_save(f_filter=file_filter, c_name=current_name)
-			if file_name is not None:
-				#prepare printing into PDF
-				settings = Gtk.PrintSettings()
-				settings.set_resolution(300)
-				print_op = Gtk.PrintOperation()
-				print_op.set_unit(Gtk.Unit.MM)
-				print_op.set_print_settings(settings)
-				print_op.connect("begin_print", self.doPrintBegin)
-				print_op.connect("draw_page", self.doPrintDraw)
-				print_op.set_export_filename(file_name)
-				result = print_op.run(Gtk.PrintOperationAction.EXPORT, self)
-				if result == Gtk.PrintOperationResult.ERROR:
-					print_op.cancel()
-				return
+			initial_name = 'AstroData.pdf'
+			gio_filters.append(item=FILTER_PDF_FILES)
+			self.file_to_save(filters=gio_filters, name=initial_name, export_app=self.exportPDF)
 
+	"""
+	 Print Operations
+	"""
 	def doPrintBegin(self, operation, context):
 		operation.set_n_pages(1)
 		operation.set_use_full_page(False)
@@ -1874,148 +2033,6 @@ class AstroWindow(Gtk.ApplicationWindow):
 			viewport.width = Gtk.PrintContext.get_width(context)
 			viewport.height = Gtk.PrintContext.get_height(context)
 			svg.render_document(cr, viewport)
-
-	# callback function for copy_action
-	def copy_callback(self, action, parameter):
-		pass
-
-	# callback function for paste_action
-	def paste_callback(self, action, parameter):
-		pass
-
-	def checkInternetConnection(self):
-		""" check internet connection for geonames.org """
-		if app.db.getAstrocfg('use_geonames.org') == "0":
-			self.iconn = False
-			dprint('iconn: not using geocoding!')
-			return
-		#from openastromod import timeoutsocket
-		#timeoutsocket.setDefaultSocketTimeout(2)
-		HOST='api.geonames.org'
-		PORT=80
-		s = None
-
-		try:
-			socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM)
-		except socket.error as msg:
-			self.iconn = False
-			dprint('iconn: no connection (getaddrinfo)')
-			return
-
-		for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM):
-			af, socktype, proto, canonname, sa = res
-			try:
-				s = socket.socket(af, socktype, proto)
-			except socket.error as msg:
-				s = None
-				continue
-			try:
-				s.connect(sa)
-			except (socket.error, timeoutsocket.Timeout):
-				s.close()
-				s = None
-				continue
-			break
-
-		if s is None:
-			self.iconn = False
-			dprint('iconn: no connection')
-		else:
-			self.iconn = True
-			dprint('iconn: got connection')
-			#timeoutsocket.setDefaultSocketTimeout(20)
-			s.close()
-		return
-
-	def updateUI(self):
-		#get menubar of window
-		menu = app.get_menubar()
-		#create history actions, last will be first
-		entries = app.db.history
-		l = len(entries)
-		t_item = Template(M_ITEM)
-		items = []
-		if len(entries) > 0:
-			#maximal 10 entries
-			i = LIMIT
-			for entry in reversed(entries):
-				i -= 1
-				l -= 1
-				if (i < 0) or (l < 0):
-					break
-				# substitute id and name
-				item = t_item.substitute(db='historydb', idx=entry[0], label=entry[1])
-				items.append(item)
-			history_items = '\n'.join(items)
-		if self.first_time:
-			#generate 'Chart' menu
-			chart_builder = Gtk.Builder()
-			chart_builder.add_from_string(CHART_XML)
-			self.chart_menu = chart_builder.get_object("ChartUI")
-			#make action for 'quickopendb'
-			history_action = Gio.SimpleAction.new_stateful(
-				"historydb",
-				GLib.VariantType.new('i'),
-				GLib.Variant.new_int32(value=0)
-			)
-			history_action.connect("activate", self.historydb_callback)
-			self.add_action(history_action)
-		else:
-			menu.remove(0)
-		if len(items) > 0:
-			history_xml = BEGIN_XML + history_items + END_XML
-		else:
-			#insert 'empty' menu item
-			history_xml = BEGIN_XML + E_ITEM + END_XML
-		update_builder = Gtk.Builder()
-		update_builder.add_from_string(history_xml)
-		history_menu = update_builder.get_object("UpdateUI")
-		self.chart_menu.insert_submenu(3, 'History', history_menu)
-		#becomes first item in menubar
-		menu.prepend_submenu('Chart', self.chart_menu)
-		# create 'Quick Open' actions
-		self.DB = app.db.getDatabase()
-		t_item = Template(M_ITEM)
-		items = []
-		for entry in self.DB:
-			# substitute id and name
-			item = t_item.substitute(db='quickopendb', idx=entry['id'], label=entry['name'])
-			items.append(item)
-		quick_open_items = '\n'.join(items)
-		if self.first_time:
-			#generate 'Event' menu
-			event_builder = Gtk.Builder()
-			event_builder.add_from_string(EVENT_XML)
-			self.event_menu = event_builder.get_object("EventUI")
-			#make action for 'quickopendb'
-			quick_open_action = Gio.SimpleAction.new_stateful(
-				"quickopendb",
-				GLib.VariantType.new('i'),
-				GLib.Variant.new_int32(value=0)
-			)
-			quick_open_action.connect("activate", self.quickopendb_callback)
-			self.add_action(quick_open_action)
-		else:
-			menu.remove(2)
-		if len(items) > 0:
-			quick_open_xml = BEGIN_XML + quick_open_items + END_XML
-		else:
-			#insert 'empty' menu item
-			quick_open_xml = BEGIN_XML + E_ITEM + END_XML
-		update_builder = Gtk.Builder()
-		update_builder.add_from_string(quick_open_xml)
-		quick_open_menu = update_builder.get_object("UpdateUI")
-		#self.event_menu.insert_item(1, Gio.MenuItem.new_submenu('Quick Open Database', quick_open_menu))
-		self.event_menu.insert_submenu(1, 'Quick Open Database', quick_open_menu)
-		menu.insert_submenu(2, 'Event', self.event_menu)
-
-	def historydb_callback(self, action, parameter):
-		idx = parameter.get_int32()
-		action.set_state(parameter)
-		for entry in app.db.history:
-			if entry['id'] == idx:
-				self.updateChartList(None, entry)
-				break
 
 	def quickopendb_callback(self, action, parameter):
 		idx = parameter.get_int32()
@@ -2058,29 +2075,30 @@ class AstroWindow(Gtk.ApplicationWindow):
 	def eventData(self, edit):
 		self.settingsLocationMode = False
 		# create a new window
-		self.window2 = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-		self.window2.set_icon_from_file(app.cfg.iconWindow)
+		self.window2 = Gtk.Window()
+		#??????????????
+		#self.window2.set_icon_from_file(app.cfg.iconWindow)
 		self.window2.set_title(_("Edit Event Details"))
-		self.window2.connect("delete_event", lambda w,e: self.window2.destroy())
-		self.window2.move(150,150)
-		self.window2.set_border_width(10)
+		#self.window2.connect("delete_event", lambda w,e: self.window2.destroy())
+		#self.window2.move(150,150)
+		#self.window2.set_border_width(10)
 		# check internet connection
 		self.checkInternetConnection()
 		# create a grid
 		grid = Gtk.Grid()
 		grid.set_column_spacing(8)
 		grid.set_row_spacing(8)
-		self.window2.add(grid)
+		self.window2.set_child(grid)
 		#Name entry
-		hbox = Gtk.HBox(homogeneous=False,spacing=5)
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		grid.attach(hbox, 0, 1, 4, 1)
 		label = Gtk.Label(label = _("Name")+":")
-		hbox.pack_start(label, False, False, 0)
+		hbox.append(child=label)
 		self.name = Gtk.Entry()
 		self.name.set_max_length(50)
 		self.name.set_width_chars(25)
 		self.name.set_text(app.name)
-		hbox.pack_start(self.name, False, False, 0)
+		hbox.prepend(child=self.name)
 		# name entry (non editable)
 		self.ename = Gtk.Label(label=app.name)
 		grid.attach(self.ename, 4, 1, 1, 1)
@@ -2090,23 +2108,23 @@ class AstroWindow(Gtk.ApplicationWindow):
 		#do we have a  connection
 		if self.iconn:
 			#use geocoders,
-			hbox = Gtk.HBox(homogeneous = False, spacing = 5)
+			hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 			grid.attach(hbox, 0, 3, 1, 1)
 			# entry for location (editable)
 			label = Gtk.Label(label=_("City")+": ")
-			hbox.pack_start(label, False, False, 0)
+			hbox.prepend(child=label)
 			self.geoLoc = Gtk.Entry()
 			self.geoLoc.set_max_length(50)
 			self.geoLoc.set_width_chars(20)
 			self.geoLoc.set_text(app.location.partition(',')[0])
-			hbox.pack_start(self.geoLoc, False, False, 0)
+			hbox.prepend(child=self.geoLoc)
 			label = Gtk.Label(label=" "+_("Country-code")+": ")
-			hbox.pack_start(label, False, False, 0)
+			hbox.prepend(child=label)
 			self.geoCC = Gtk.Entry()
 			self.geoCC.set_max_length(2)
 			self.geoCC.set_width_chars(2)
 			self.geoCC.set_text(app.countrycode)
-			hbox.pack_start(self.geoCC, False, False, 0)
+			hbox.prepend(child=self.geoCC)
 		else:
 			#otherwise use geonames sql database and get nearest geoname
 			self.GEON_nearest = app.db.gnearest(app.geolat, app.geolon)
@@ -2114,10 +2132,10 @@ class AstroWindow(Gtk.ApplicationWindow):
 			self.contbox = Gtk.ComboBox()
 			self.contstore = Gtk.ListStore(str, str)
 			cell = Gtk.CellRendererText()
-			self.contbox.pack_start(cell, True)
+			self.contbox.pack_start(cell, False)
 			self.contbox.add_attribute(cell, 'text', 0)
 			grid.attach(self.contbox, 0, 3, 1, 1)
-			self.contbox.set_wrap_width(1)
+			#self.contbox.set_wrap_width(1)
 			sql = 'SELECT * FROM continent ORDER BY name ASC'
 			app.db.gquery(sql)
 			continentinfo = []
@@ -2136,26 +2154,26 @@ class AstroWindow(Gtk.ApplicationWindow):
 			# countries
 			self.countrybox = Gtk.ComboBox()
 			cell = Gtk.CellRendererText()
-			self.countrybox.pack_start(cell, True)
+			self.countrybox.pack_start(cell, False)
 			self.countrybox.add_attribute(cell, 'text', 0)
 			grid.attach(self.countrybox, 1, 3, 1, 1)
-			self.countrybox.set_wrap_width(1) 
+			#self.countrybox.set_wrap_width(1) 
 			self.countrybox.connect('changed', self.eventDataChangedCountrybox)
 			# provinces
 			self.provbox = Gtk.ComboBox()
 			cell = Gtk.CellRendererText()
-			self.provbox.pack_start(cell, True)
+			self.provbox.pack_start(cell, False)
 			self.provbox.add_attribute(cell, 'text', 0)
 			grid.attach(self.provbox, 2, 3, 1, 1)
-			self.provbox.set_wrap_width(1) 
+			#self.provbox.set_wrap_width(1) 
 			self.provbox.connect('changed', self.eventDataChangedProvbox)
 			# cities
 			self.citybox = Gtk.ComboBox()
 			cell = Gtk.CellRendererText()
-			self.citybox.pack_start(cell, True)
+			self.provbox.pack_start(cell, False)
 			self.citybox.add_attribute(cell, 'text', 0)
 			grid.attach(self.citybox, 3, 3, 1, 1)
-			self.citybox.set_wrap_width(2) 
+			#self.citybox.set_wrap_width(2) 
 			self.citybox.connect('changed', self.eventDataChangedCitybox)
 			# add search in database
 			label = Gtk.Label(label=_("Search City")+":")
@@ -2175,97 +2193,94 @@ class AstroWindow(Gtk.ApplicationWindow):
 			label = Gtk.Label(label="("+_("For example: London, GB")+")")
 			grid.attach(label, 4, 4, 1, 1)
 		# Year month day entry
-		hbox = Gtk.HBox(homogeneous = False, spacing = 5)
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		grid.attach(hbox, 0, 5, 3, 1)
 		label = Gtk.Label(label=_("Year")+":")
-		hbox.pack_start(label, False, False, 0)
+		hbox.prepend(child=label)
 		# years from 1800 to 2400
 		adjustment = Gtk.Adjustment(lower=1800, upper=2400, step_increment=1, page_increment=10)
 		self.dateY = Gtk.SpinButton()
 		self.dateY.props.adjustment = adjustment
 		self.dateY.set_numeric(True)
 		self.dateY.set_value(app.year_loc)
-		hbox.pack_start(self.dateY, False, False, 0)
+		hbox.prepend(child=self.dateY)
 		label = Gtk.Label(label=_("Month")+":")
-		hbox.pack_start(label, False, False, 0)
+		hbox.prepend(child=label)
 		adjustment = Gtk.Adjustment(lower=1, upper=12, step_increment=1)
 		self.dateM = Gtk.SpinButton()
 		self.dateM.props.adjustment = adjustment
 		self.dateM.set_numeric(True)
 		self.dateM.set_value(app.month_loc)
-		hbox.pack_start(self.dateM, False, False, 0)
+		hbox.prepend(child=self.dateM)
 		label = Gtk.Label(label=_("Day")+":")
-		hbox.pack_start(label, False, False, 0)
+		hbox.prepend(child=label)
 		adjustment = Gtk.Adjustment(lower=1, upper=31, step_increment=1)
 		self.dateD = Gtk.SpinButton()
 		self.dateD.props.adjustment = adjustment
 		self.dateD.set_numeric(True)
 		self.dateD.set_value(app.day_loc)
-		hbox.pack_start(self.dateD, False, False, 0)
+		hbox.prepend(child=self.dateD)
 		# date entry (non editable)
 		labelDateStr = str(app.year_loc)+'-%(#1)02d-%(#2)02d' % {'#1':app.month_loc, '#2':app.day_loc}
 		self.labelDate = Gtk.Label(label=labelDateStr)
 		grid.attach(self.labelDate, 3, 5, 1, 1)
 		# time entry (editable) (Hour, Minutes, Seconds, Timezone)
-		hbox = Gtk.HBox(homogeneous = False, spacing = 5)
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		grid.attach(hbox, 0, 6, 3, 1)
 		label = Gtk.Label(label=_("Hour")+":")
-		hbox.pack_start(label, False, False, 0)
+		hbox.prepend(child=label)
 		adjustment = Gtk.Adjustment(lower=0, upper=23, step_increment=1)
 		self.timeH = Gtk.SpinButton()
 		self.timeH.props.adjustment = adjustment
 		self.timeH.set_numeric(True)
 		self.timeH.set_value(app.hour_loc)
-		hbox.pack_start(self.timeH, False, False, 0)
+		hbox.prepend(child=self.timeH)
 		label = Gtk.Label(label=_("Min")+":")
-		hbox.pack_start(label, False, False, 0)
+		hbox.prepend(child=label)
 		adjustment = Gtk.Adjustment(lower=1, upper=59, step_increment=1)
 		self.timeM = Gtk.SpinButton()
 		self.timeM.props.adjustment = adjustment
 		self.timeM.set_numeric(True)
 		self.timeM.set_value(app.minute_loc)
-		hbox.pack_start(self.timeM, False, False, 0)
+		hbox.prepend(child=self.timeM)
 		label = Gtk.Label(label="Sec:")
-		hbox.pack_start(label, False, False, 0)
+		hbox.prepend(child=label)
 		adjustment = Gtk.Adjustment(lower=0, upper=59, step_increment=1)
 		self.timeS = Gtk.SpinButton()
 		self.timeS.props.adjustment = adjustment
 		self.timeS.set_numeric(True)
 		self.timeS.set_value(app.second_loc)
-		hbox.pack_start(self.timeS, False, False, 0)
+		hbox.prepend(child=self.timeS)
 		#time entry (non editable)
 		labelTzStr = '%(#1)02d:%(#2)02d:%(#3)02d' % {'#1':app.hour_loc, '#2':app.minute_loc, '#3':app.second_loc} + app.decTzStr(app.timezone)
 		self.labelTz = Gtk.Label(label=labelTzStr)
 		grid.attach(self.labelTz, 3, 6, 1, 1)
 		# buttonbox
-		buttonbox = Gtk.HBox(homogeneous = False, spacing = 5)
+		buttonbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		grid.attach(buttonbox, 1, 7, 4, 1)
 		# save to database button
 		if edit:
 			self.savebutton = Gtk.Button.new_with_mnemonic(label = _("Save"))
 			self.savebutton.connect("clicked", self.openDatabaseEditAsk)
-			buttonbox.pack_start(self.savebutton, False, False, 0)
+			buttonbox.prepend(child=self.savebutton)
 		else:
 			self.savebutton = Gtk.Button.new_with_mnemonic(label = _("Add to Database"))
 			self.savebutton.connect("clicked", self.eventDataSaveAsk)
-			buttonbox.pack_start(self.savebutton, False, False, 0)
+			buttonbox.prepend(child=self.savebutton)
 		# Apply button
 		button = Gtk.Button.new_with_mnemonic(label = _("Apply"))
 		button.connect("clicked", self.eventDataApply)
-		buttonbox.pack_start(button, False, False, 0)
+		buttonbox.prepend(child=button)
   		#ok button
 		if edit == False:
 			button = Gtk.Button.new_with_mnemonic(label = _("OK"))
 			button.connect("clicked", self.eventDataSubmit)
-			#button.set_can_default(True)
-			buttonbox.pack_start(button, False, False, 0)
-			button.set_can_default(True)
-			button.grab_default()
+			buttonbox.prepend(child=button)
 		# cancel button
 		button = Gtk.Button.new_with_mnemonic(label = _("Cancel"))
 		button.connect("clicked", lambda w: self.window2.destroy())
-		buttonbox.pack_start(button, False, False, 0)
-		self.window2.show_all()
+		buttonbox.prepend(child=button)
+		self.window2.present()
 
 	def citySearch(self, widget):
 		#text entry
@@ -2415,50 +2430,58 @@ class AstroWindow(Gtk.ApplicationWindow):
 		en = app.db.getDatabase()
 		for i in range(len(en)):
 			if en[i]["name"] == self.name.get_text():
-				dialog=Gtk.Dialog(
-					title=_('Duplicate'),
-					parent=self.window2,
-					flags=0
-				)
-				dialog.add_button(Gtk.STOCK_OK, Gtk.ResponseType.DELETE_EVENT)
-				dialog.set_icon_from_file(app.cfg.iconWindow)
-				dialog.connect("response", lambda w,e: dialog.destroy())
-				dialog.connect("close", lambda w,e: dialog.destroy())
-				dialog.vbox.pack_start(Gtk.Label(label=_('There is allready an entry for this name, please choose another')), True, True, 0)
-				dialog.show_all()
+				dialog = Gtk.Window(title=_('Found Duplicate'))
+				""" set_icon """
+				#dialog.set_icon_from_file(app.cfg.iconWindow)
+				dialog.set_default_size(256,-1)
+				vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+				double = Gtk.Label(label=_('There is allready an entry for this name, please choose another'))
+				double.set_wrap(True)
+				vbox.append(double)
+				button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+				#OK button
+				button = Gtk.Button.new_with_mnemonic(label=_("OK"))
+				button.connect("clicked", lambda w: dialog.destroy())
+				button_box.append(button)
+				button_box.append(button)
+				vbox.append(button_box)
+				dialog.set_child(vbox)
+				dialog.present()
 				return
 		#ask for confirmation
-		dialog=Gtk.Dialog(
-			title=_('Question'),
-			parent=self.window2,
-			flags=0
-		)
-		dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT)
-		dialog.add_button(Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT)
-		dialog.set_destroy_with_parent(True)
-		dialog.set_icon_from_file(app.cfg.iconWindow)
-		dialog.connect("close", lambda w,e: dialog.destroy())
-		dialog.connect("response", self. eventDataSave)
-		dialog.vbox.pack_start(Gtk.Label(label=_('Are you sure you want to save this entry to the database?')), True, True, 0)
-		dialog.show_all()
+		dialog = Gtk.Window(title=_('Question'))
+		""" set_icon """
+		#dialog.set_icon_from_file(app.cfg.iconWindow)
+		dialog.set_default_size(256,-1)
+		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		confirm = Gtk.Label(label=_('Are you sure you want to save this entry to the database?'))
+		confirm.set_wrap(True)
+		vbox.append(confirm)
+		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		#OK button
+		button = Gtk.Button.new_with_mnemonic(label=_("OK"))
+		button.connect("clicked", self.eventDataSave, dialog)
+		button_box.append(button)
+		#Cancel button
+		button = Gtk.Button.new_with_mnemonic(label=_("Cancel"))
+		button.connect("clicked", lambda w: dialog.destroy())
+		button_box.append(button)
+		vbox.append(button_box)
+		dialog.set_child(vbox)
+		dialog.present()
 		return
 
-	def eventDataSave(self, widget, response_id):
-		if response_id == Gtk.ResponseType.ACCEPT:
-			#update chart data
-			self.updateChartData()
-			#set query to save
-			#add data from event_natal table
-			sql='INSERT INTO event_natal (id, name, year, month, day, hour, geolon, geolat, altitude, location, timezone, notes, image, countrycode, geonameid, timezonestr, extra) VALUES (null, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-			tuple=(app.name,app.year,app.month,app.day,app.hour, app.geolon, app.geolat, app.altitude, app.location, app.timezone, '', '', app.countrycode, app.geonameid, app.timezonestr, '')
-			app.db.pquery([sql],[tuple])
-			dprint('saved to database: '+app.name)
-			self.updateUI()
-			widget.destroy()
-		else:
-			widget.destroy()
-			dprint('rejected save to database')
-		return
+	def eventDataSave(self, dialog):
+		#update chart data
+		self.updateChartData()
+		#set query to save
+		#add data from event_natal table
+		sql='INSERT INTO event_natal (id, name, year, month, day, hour, geolon, geolat, altitude, location, timezone, notes, image, countrycode, geonameid, timezonestr, extra) VALUES (null, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+		tuple=(app.name,app.year,app.month,app.day,app.hour, app.geolon, app.geolat, app.altitude, app.location, app.timezone, '', '', app.countrycode, app.geonameid, app.timezonestr, '')
+		app.db.pquery([sql],[tuple])
+		dprint('saved to database: '+app.name)
+		dialog.destroy()
+		self.updateUI()
 
 	def eventDataSubmit(self, widget):
 		#check if no changes were made
@@ -2497,12 +2520,13 @@ class AstroWindow(Gtk.ApplicationWindow):
 		self.openDatabase(extraDB=None)
 
 	def openDatabase(self, extraDB):
-		self.win_OD = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-		self.win_OD.set_icon_from_file(app.cfg.iconWindow)
+		self.win_OD = Gtk.Window()
+		""" set_icon """
+		#self.win_OD.set_icon_from_file(app.cfg.iconWindow)
 		self.win_OD.set_title(_('Open Database Entry'))
-		self.win_OD.set_size_request(600, 450)
-		self.win_OD.move(150,150)
-		self.win_OD.connect("delete_event", lambda w,e: self.win_OD.destroy())
+		self.win_OD.set_default_size(600, 450)
+		#self.win_OD.move(150,150)
+		#self.win_OD.connect("delete_event", lambda w,e: self.win_OD.destroy())
 		#listmodel
 		self.listmodel = Gtk.ListStore(int, str,str,str)
 		self.win_OD_treeview = Gtk.TreeView(model=self.listmodel)
@@ -2554,26 +2578,30 @@ class AstroWindow(Gtk.ApplicationWindow):
 		self.win_OD_tvcolumn2.set_sort_column_id(2)
 		self.win_OD_tvcolumn3.set_sort_column_id(3)
 		#add treeview to scrolledwindow
-		scrolledwindow = Gtk.ScrolledWindow()
-		scrolledwindow.add(self.win_OD_treeview)
-		scrolledwindow.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.ALWAYS)
-		vbox=Gtk.VBox()
-		vbox.pack_start(scrolledwindow,True,True,0)
-		hbox=Gtk.HBox(homogeneous=False,spacing=4)
+		scrolled_window = Gtk.ScrolledWindow()
+		scrolled_window.set_vexpand(True)
+		scrolled_window.set_child(self.win_OD_treeview)
+		scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.ALWAYS)
+		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		vbox.set_vexpand(True)
+		vbox.append(scrolled_window)
+		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		button_box.set_spacing(4)
+		button_box.set_homogeneous(False)
 		#buttons
 		if extraDB is None:
-			button = Gtk.Button.new_with_mnemonic(label=_("Cancel"))
-			button.connect("clicked", lambda w: self.win_OD.destroy())
-			hbox.pack_end(button,False,False,0)
 			button = Gtk.Button.new_with_mnemonic(label=_("Edit"))
 			button.connect("clicked", self.openDatabaseEdit)
-			hbox.pack_end(button,False,False,0)
+			button_box.append(button)
 			button = Gtk.Button.new_with_mnemonic(label=_("Delete"))
 			button.connect("clicked", self.openDatabaseDel)
-			hbox.pack_end(button,False,False,0)
+			button_box.append(button)
 			button = Gtk.Button.new_with_mnemonic(label=_("Open"))
 			button.connect("clicked", self.openDatabaseOpen)
-			hbox.pack_end(button,False,False,0)
+			button_box.append(button)
+			button = Gtk.Button.new_with_mnemonic(label=_("Cancel"))
+			button.connect("clicked", lambda w: self.win_OD.destroy())
+			button_box.append(button)
 		else:
 			label=Gtk.Label(label=_("Search Name")+":")
 			self.namesearch = Gtk.Entry()
@@ -2584,23 +2612,22 @@ class AstroWindow(Gtk.ApplicationWindow):
 			self.namesearch.connect("activate", self.nameSearch)
 			self.nameresetbutton = Gtk.Button.new_with_mnemonic(label=_('Reset'))
 			self.nameresetbutton.connect("clicked", self.nameSearchReset)
-			hbox.pack_end(self.nameresetbutton,False,False,0)
-			hbox.pack_end(self.namesearchbutton,False,False,0)
-			hbox.pack_end(self.namesearch,False,False,0)
-			hbox.pack_end(label,False,False,0)
-
+			button_box.append(self.nameresetbutton)
+			button_box.append(label)
+			button_box.append(self.namesearch)
+			button_box.append(self.namesearchbutton)
 			button = Gtk.Button.new_with_mnemonic(label=_("Open"))
 			button.connect("clicked", self.openDatabaseOpen)
-			hbox.pack_start(button,False,False,0)
+			button_box.prepend(button)
 			button = Gtk.Button.new_with_mnemonic(label=_("Close"))
 			button.connect("clicked", lambda w: self.win_OD.destroy())
-			hbox.pack_start(button,False,False,0)
+			button_box.append(button)
 		#display window
 		self.win_OD_treeview.connect("row-activated", lambda w,e,f: self.openDatabaseOpen(w))
-		vbox.pack_start(hbox,False,False,0)
-		self.win_OD.add(vbox)
+		vbox.append(button_box)
+		self.win_OD.set_child(vbox)
 		self.win_OD_treeview.set_model(model=self.listmodel)
-		self.win_OD.show_all()
+		self.win_OD.present()
 		return
 
 	def openDatabaseEdit(self, widget):
@@ -2621,17 +2648,15 @@ class AstroWindow(Gtk.ApplicationWindow):
 		en = app.db.getDatabase()
 		for i in range(len(en)):
 			if en[i]["name"] == self.name.get_text() and self.oDE_list["id"] != en[i]["id"]:
-				dialog=Gtk.Dialog(
-					title=_('Duplicate'),
-					window=self.window2,
-					flags=0
-				)
+				dialog = Gtk.Window(title=_('Duplicate'))
+
 				dialog.add_button(Gtk.STOCK_OK, Gtk.ResponseType.DELETE_EVENT)
-				dialog.set_icon_from_file(app.cfg.iconWindow)
+				""" set_icon """
+				#dialog.set_icon_from_file(app.cfg.iconWindow)
 				dialog.connect("response", lambda w,e: dialog.destroy())
 				dialog.connect("close", lambda w,e: dialog.destroy())
-				dialog.vbox.pack_start(Gtk.Label(label=_('There is allready an entry for this name, please choose another')),True,True,0)
-				dialog.show_all()
+				dialog.vbox.append(Gtk.Label(label=_('There is allready an entry for this name, please choose another')))
+				dialog.present()
 				return
 		#ask for confirmation
 		dialog=Gtk.Dialog(
@@ -2642,11 +2667,12 @@ class AstroWindow(Gtk.ApplicationWindow):
 		dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT)
 		dialog.add_button(Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT)
 		dialog.set_destroy_with_parent(True)
-		dialog.set_icon_from_file(app.cfg.iconWindow)
+		""" set_icon """
+		#dialog.set_icon_from_file(app.cfg.iconWindow)
 		dialog.connect("close", lambda w,e: dialog.destroy())
 		dialog.connect("response",self.openDatabaseEditSave)
-		dialog.vbox.pack_start(Gtk.Label(label=_('Are you sure you want to Save?')),True,True,0)
-		dialog.show_all()
+		dialog.vbox.append(Gtk.Label(label=_('Are you sure you want to Save?')))
+		dialog.present()
 
 	def openDatabaseOpen(self, widget):
 		model = self.win_OD_selection.get_selected()[0]
@@ -2686,14 +2712,22 @@ class AstroWindow(Gtk.ApplicationWindow):
 			if self.DB[i]["id"] == model.get_value(iter,0):
 				self.ODDlist = self.DB[i]
 		name = self.ODDlist["name"]
-		dialog=Gtk.Dialog(title=_('Question'),parent=self.win_OD,flags=0)
+		dialog = Gtk.Window(title=_('Question'))
+		vbox = Gtk.Box(orientation=Gtk.Orientation.Vertical)
+		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+
+
+		vbox.append(Gtk.Label(label=_('Are you sure you want to delete')+' '+name+'?'))
+
 		dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT)
 		dialog.add_button(Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT)
 		dialog.set_destroy_with_parent(True)
 		dialog.connect("close", lambda w,e: dialog.destroy())
 		dialog.connect("response",self.openDatabaseDelDo)
-		dialog.vbox.pack_start(Gtk.Label(label=_('Are you sure you want to delete')+' '+name+'?'),True,True,0)
-		dialog.show_all()
+
+		vbox.append(button_box)
+		dialog.set_child(vbox)
+		dialog.present()
 
 	def openDatabaseDelDo(self, widget, response_id):
 		if response_id == Gtk.ResponseType.ACCEPT:
@@ -2812,12 +2846,13 @@ class AstroWindow(Gtk.ApplicationWindow):
 		self.openDatabaseSelect(selectstr, selected)
 
 	def openDatabaseSelect(self, selectstr, type):
-		self.win_OD = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+		self.win_OD = Gtk.Window()
 		self.win_OD.set_title(_('Select Database Entry'))
-		self.win_OD.set_icon_from_file(app.cfg.iconWindow)
-		self.win_OD.set_size_request(400, 450)
-		self.win_OD.move(150,150)
-		self.win_OD.connect("delete_event", lambda w,e: self.openDatabaseSelectReject())
+		""" >>> set_icon """
+		#self.win_OD.set_icon_from_file(app.cfg.iconWindow)
+		self.win_OD.set_size_request(512, 464)
+		#self.win_OD.move(150,150)
+		#self.win_OD.connect("delete_event", lambda w,e: self.openDatabaseSelectReject())
 		#define listmodel		
 		self.listmodel = Gtk.ListStore(int,str,str,str)	
 		self.win_OD_treeview = Gtk.TreeView(model=self.listmodel)
@@ -2865,24 +2900,27 @@ class AstroWindow(Gtk.ApplicationWindow):
 		self.win_OD_tvcolumn3.set_sort_column_id(3)
 		#add treeview to scrolledwindow
 		scrolledwindow = Gtk.ScrolledWindow()
-		scrolledwindow.add(self.win_OD_treeview)
-		scrolledwindow.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.ALWAYS)
-		vbox=Gtk.VBox()
-		vbox.pack_start(scrolledwindow, True, True, 0)
-		hbox=Gtk.HBox()		
+		scrolledwindow.set_child(self.win_OD_treeview)
+		scrolledwindow.set_vexpand(True)
+		#scrolledwindow.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.ALWAYS)
+		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		vbox.set_vexpand(True)
+		vbox.append(scrolledwindow)
+
+		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		button_box.set_homogeneous(True)
 		#buttons
 		button = Gtk.Button.new_with_mnemonic(label=_('Cancel'))
 		button.connect("clicked", lambda w: self.openDatabaseSelectReject())
-		hbox.pack_end(button,False, False, 0)	
+		button_box.append(button)	
 		button = Gtk.Button.new_with_mnemonic(label=selectstr)
 		button.connect("clicked", lambda w: self.openDatabaseSelectReturn(type))
-		hbox.pack_end(button,False, False, 0)		
+		button_box.prepend(button)		
 		#display window
-		vbox.pack_start(hbox,False, False, 0)
-		self.win_OD.add(vbox)
+		vbox.append(button_box)
+		self.win_OD.set_child(vbox)
 		self.win_OD_treeview.set_model(model=self.listmodel)
-		self.win_OD.show_all()
-		return
+		self.win_OD.present()
 
 	def openDatabaseSelectReject(self):
 		self.win_OD.destroy()
@@ -2974,9 +3012,9 @@ class AstroWindow(Gtk.ApplicationWindow):
 			app.timezone=app.offsetToTz(dt.utcoffset())
 			app.utcToLocal()
 			chart_name = app.makeSVG()
-		self.draw.setupSVG(chart_name)
-		self.draw.queue_draw()
-		self.win_OD.destroy()		
+		self.image.setupSVG(chart_name)
+		self.image.queue_resize()
+		self.win_OD.close()		
 
 	"""
 	 Menu items for general configuration
@@ -2985,30 +3023,32 @@ class AstroWindow(Gtk.ApplicationWindow):
 	"""
 	def setConfiguration_callback(self, action, parameter):
 		# create a new window
-		self.win_SC = Gtk.Dialog(parent=self)
-		self.win_SC.set_icon_from_file(app.cfg.iconWindow)
+		self.win_SC = Gtk.Window(parent=self)
+		""" >>> set_icon changed in GTK4 """
+
 		self.win_SC.set_title(_("General Configuration"))
-		self.win_SC.connect("delete_event", lambda w,e: self.win_SC.destroy())
-		self.win_SC.move(200,150)
-		self.win_SC.set_border_width(5)
-		self.win_SC.set_size_request(450,450)
+		#self.win_SC.connect("delete_event", lambda w,e: self.win_SC.destroy())
+		#self.win_SC.move(200,150)
+		#self.win_SC.set_border_width(5)
+		self.win_SC.set_default_size(364,512)
 		#data dictionary
 		data = {}
+		#create a VBox
+		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		#create a grid with 8 rows and 1 column
 		grid = Gtk.Grid()
-		grid.set_column_spacing(0)
+		grid.set_column_spacing(8)
 		grid.set_row_spacing(8)
-		grid.set_border_width(10)
-		#description
-
-		vbox = Gtk.VBox()
+		#grid.set_border_width(10)
+		grid.set_column_homogeneous(True)
 		# options
-		hbox = Gtk.HBox()
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		hbox.set_spacing(8)
 		geobase = Gtk.Label(label=_("Use Online Geocoding (ws.geonames.org)"))
-		hbox.pack_start(geobase, False, False, padding=10)
+		hbox.prepend(geobase)
 		data['use_geonames.org'] = Gtk.CheckButton()
-		hbox.pack_start(data['use_geonames.org'], False, False, 0)
-		grid.add(hbox)
+		hbox.append(data['use_geonames.org'])
+		grid.attach(hbox, 0, 0, 1, 1)
 		if app.db.getAstrocfg('use_geonames.org') == "1":
 			data['use_geonames.org'].set_active(True)
 		# house system
@@ -3155,54 +3195,55 @@ class AstroWindow(Gtk.ApplicationWindow):
 			if app.db.astrocfg['language'] == LANGUAGES[i]:
 				active = i+1
 		data['language'].set_active(active)
-		vbox.pack_start(grid, False, False, 0)
-		# make the ui layout with ok button
-		scrolledwindow = Gtk.ScrolledWindow()
-		scrolledwindow.set_border_width(5)
-		scrolledwindow.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.ALWAYS)
-		scrolledwindow.add(vbox)
-		self.win_SC.vbox.pack_start(scrolledwindow, True, True, 0)
-
+		#make the ui layout with ok button
+		scrolled_window = Gtk.ScrolledWindow()
+		scrolled_window.set_vexpand(True)
+		scrolled_window.set_child(grid)
+		vbox.append(scrolled_window)
+		#self.win_SC.vbox.pack_start(scrolledwindow, True, True, 0)
+		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		button_box.set_homogeneous(True)
 		# ok button
 		button = Gtk.Button.new_with_mnemonic(label=_("OK"))
 		button.connect("clicked", self.settingsConfigurationSubmit, data)
-		button.set_can_default(True)
-		self.win_SC.action_area.pack_start(button, True, True, 0)
-		button.grab_default()
-
+		#button.set_can_default(True)
+		#self.win_SC.action_area.pack_start(button, True, True, 0)
+		#button.grab_default()
+		button_box.prepend(button)
 		# cancel button
 		button = Gtk.Button.new_with_mnemonic(label=_("Cancel"))
 		button.connect("clicked", lambda w: self.win_SC.destroy())
-		self.win_SC.action_area.pack_start(button, True, True, 0)
-
-		self.win_SC.show_all()
-		return
+		#self.win_SC.action_area.pack_start(button, True, True, 0)
+		button_box.prepend(button)
+		vbox.append(button_box)
+		self.win_SC.set_child(vbox)
+		self.win_SC.present()
 
 	def settingsConfigurationSubmit(self, widget, data):
-		update=False
+		update = False
 		if data['use_geonames.org'].get_active():
 			app.db.setAstrocfg("use_geonames.org","1")
 		else:
 			app.db.setAstrocfg("use_geonames.org","0")
 		# houses system
 		if self.houses_list[data['houses_system'].get_active()] != app.db.astrocfg['houses_system']:
-			update=True
+			update = True
 		app.db.setAstrocfg("houses_system",self.houses_list[data['houses_system'].get_active()])
 		# position calculation
 		if self.postype_list[data['postype'].get_active()] != app.db.astrocfg['postype']:
-			update=True
+			update = True
 		app.db.setAstrocfg("postype",self.postype_list[data['postype'].get_active()])
 		#chart view
 		if self.chartview_list[data['chartview'].get_active()] != app.db.astrocfg['chartview']:
-			update=True
+			update = True
 		app.db.setAstrocfg("chartview",self.chartview_list[data['chartview'].get_active()])
 		#zodiac type
 		if self.zodiactype_list[data['zodiactype'].get_active()] != app.db.astrocfg['zodiactype']:
-			update=True
+			update = True
 		app.db.setAstrocfg("zodiactype",self.zodiactype_list[data['zodiactype'].get_active()])
 		#sidereal mode
 		if self.siderealmode_list[data['siderealmode'].get_active()] != app.db.astrocfg['siderealmode']:
-			update=True
+			update = True
 		app.db.setAstrocfg("siderealmode",self.siderealmode_list[data['siderealmode'].get_active()])
 		#language
 		model = data['language'].get_model()
@@ -3212,13 +3253,12 @@ class AstroWindow(Gtk.ApplicationWindow):
 		else:
 			active_lang = LANGUAGES[active-1]
 		if active_lang != app.db.astrocfg['language']:
-			update=True
+			update = True
 		app.db.setAstrocfg("language",active_lang)
 
 		# set language to be used
 		app.db.setLanguage(active_lang)
 		self.updateUI()
-
 		# updatechart
 		if update:
 			self.updateChart()
@@ -3237,17 +3277,19 @@ class AstroWindow(Gtk.ApplicationWindow):
 		# check connection to the internet
 		self.checkInternetConnection()
 		# create a new window
-		self.win_SL = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-		self.win_SL.set_icon_from_file(app.cfg.iconWindow)
+		self.win_SL = Gtk.Window()
+		""" >>> set_icon changed in GTK4 """
+
 		self.win_SL.set_title(_("Please Set Your Home Location"))
-		self.win_SL.connect("delete_event", lambda w,e: self.settingsLocationDestroy())
-		self.win_SL.move(150,150)
-		self.win_SL.set_border_width(10)
+		""" >>> settingsLocationDestroy changed in GTK4 """
+		#self.win_SL.connect("delete_event", lambda w,e: self.settingsLocationDestroy())
+		#self.win_SL.move(150,150)
+		#self.win_SL.set_border_width(10)
 		# create a grid, method 'attach', left, top, width, height
 		grid = Gtk.Grid()
 		grid.set_column_spacing(15)
 		grid.set_row_spacing(15)
-		self.win_SL.add(grid)
+		self.win_SL.set_child(grid)
 		# display of location (non editable)
 		location = Gtk.Label(label=_('Location')+':')
 		grid.attach(location, 0, 1, 1, 1)
@@ -3264,24 +3306,24 @@ class AstroWindow(Gtk.ApplicationWindow):
 		# use geocoders if we have an internet connection else geonames database
 		if self.iconn:
 			# entry for location (edigrid)
-			hbox = Gtk.HBox()
+			hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 			label = Gtk.Label(label=_("City")+": ")
-			hbox.pack_start(label, False, False, 0)
+			hbox.append(label)
 			self.geoLoc = Gtk.Entry()
 			self.geoLoc.set_max_length(100)
 			self.geoLoc.set_width_chars(30)
 			self.geoLoc.set_text(app.home_location.partition(',')[0])
-			hbox.pack_start(self.geoLoc, False, False, 0)
+			hbox.append(self.geoLoc)
 			label = Gtk.Label(label=" "+_("Country-code")+": ")
-			hbox.pack_start(label, False, False, 0)
+			hbox.append(label)
 			self.geoCC = Gtk.Entry()
 			self.geoCC.set_max_length(2)
 			self.geoCC.set_width_chars(2)
 			self.geoCC.set_text(app.home_countrycode)
-			hbox.pack_start(self.geoCC, False, False, 0)
+			hbox.append(self.geoCC)
 			grid.attach(hbox, 0, 0, 2, 1)
 		else:
-			hbox=Gtk.HBox()
+			hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 			grid.attach(hbox, 0, 0, 2, 1)
 			# get nearest home
 			self.GEON_nearest = app.db.gnearest(app.geolat,app.geolon)
@@ -3291,8 +3333,8 @@ class AstroWindow(Gtk.ApplicationWindow):
 			cell = Gtk.CellRendererText()
 			self.contbox.pack_start(cell, False)
 			self.contbox.add_attribute(cell, 'text', 0)
-			hbox.pack_start(self.contbox, False, False, 0)
-			self.contbox.set_wrap_width(1)
+			hbox.append(self.contbox)
+			#self.contbox.set_wrap_width(1)
 			sql = 'SELECT * FROM continent ORDER BY name ASC'
 			app.db.gquery(sql)
 			continentinfo=[]
@@ -3311,46 +3353,46 @@ class AstroWindow(Gtk.ApplicationWindow):
 			cell = Gtk.CellRendererText()
 			self.countrybox.pack_start(cell, False)
 			self.countrybox.add_attribute(cell, 'text', 0)
-			hbox.pack_start(self.countrybox, False, False, 0 )
-			self.countrybox.set_wrap_width(1) 
+			hbox.append(self.countrybox)
+			#self.countrybox.set_wrap_width(1) 
 			self.countrybox.connect('changed', self.eventDataChangedCountrybox)
 			# provinces
 			self.provbox = Gtk.ComboBox()
 			cell = Gtk.CellRendererText()
 			self.provbox.pack_start(cell, False)
 			self.provbox.add_attribute(cell, 'text', 0)
-			hbox.pack_start(self.provbox, False, False, 0 )
-			self.provbox.set_wrap_width(1) 
+			hbox.append(self.provbox)
+			#self.provbox.set_wrap_width(1) 
 			self.provbox.connect('changed', self.eventDataChangedProvbox)
 			# cities
 			self.citybox = Gtk.ComboBox()
 			cell = Gtk.CellRendererText()
 			self.citybox.pack_start(cell, False)
 			self.citybox.add_attribute(cell, 'text', 0)
-			hbox.pack_start(self.citybox, False, False, 0 )
-			self.citybox.set_wrap_width(2) 
+			hbox.append(self.citybox)
+			#self.citybox.set_wrap_width(2) 
 			self.citybox.connect('changed', self.eventDataChangedCitybox)
 			self.contbox.connect('changed', self.eventDataChangedContbox)
 			self.contbox.set_active(activecont)
 		# buttonbox
-		buttonbox = Gtk.HBox(homogeneous=False, spacing=5)
+		buttonbox = Gtk.Box(homogeneous=False, spacing=5)
 		grid.attach(buttonbox, 0, 4, 2, 1)
    		# ok button
 		button = Gtk.Button.new_with_mnemonic(label="OK")
 		button.connect("clicked", self.settingsLocationSubmit)
-		button.set_can_default(True)
-		buttonbox.pack_start(button, True, False, 0)
-		button.grab_default()
+		#button.set_can_default(True)
+		buttonbox.append(button)
+		#button.grab_default()
 		# Apply button
 		button = Gtk.Button.new_with_mnemonic(label=_('Apply'))
 		button.connect("clicked", self.settingsLocationApply)
-		buttonbox.pack_start(button, True, False, 0)
+		buttonbox.append(button)
 		# Cancel button
 		button = Gtk.Button.new_with_mnemonic(label=_("Cancel"))
 		button.connect("clicked", lambda w: self.settingsLocationDestroy())
-		buttonbox.pack_start(button, True, False, 0)
+		buttonbox.append(button)
 		# show all
-		self.win_SL.show_all()
+		self.win_SL.present()
 
 	def settingsLocationSubmit(self, widget):
 		self.settingsLocationApply(widget)
@@ -3430,7 +3472,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 
 	def settingsLocationDestroy(self):
 		self.settingsLocationMode = False
-		self.win_SL.destroy()
+		self.win_SL.close()
 		return
 
 	"""
@@ -3473,18 +3515,19 @@ class AstroWindow(Gtk.ApplicationWindow):
 
 	def specialSolar_callback(self, action, parameter):
 		# create a new window
-		self.win_SS = Gtk.Dialog()
-		self.win_SS.set_icon_from_file(app.cfg.iconWindow)
+		self.win_SS = Gtk.Window()
+		""" >>> set_icon """
+		#self.win_SS.set_icon_from_file(app.cfg.iconWindow)
 		self.win_SS.set_title(_("Select year for Solar Return"))
-		self.win_SS.connect("delete_event", lambda w,e: self.win_SS.destroy())
-		self.win_SS.move(150,150)
-		self.win_SS.set_border_width(5)
+		#self.win_SS.connect("delete_event", lambda w,e: self.win_SS.destroy())
+		#self.win_SS.move(150,150)
+		#self.win_SS.set_border_width(5)
 		self.win_SS.set_size_request(300,100)
 		#create a grid
 		grid = Gtk.Grid()
 		grid.set_column_spacing(8)
 		grid.set_row_spacing(8)
-		grid.set_border_width(10)
+		#grid.set_border_width(10)
 		# options
 		header = Gtk.Label(label=_("Select year for Solar Return")+":")
 		grid.attach(header, 0, 0, 2, 1)
@@ -3498,40 +3541,43 @@ class AstroWindow(Gtk.ApplicationWindow):
 		spinner['Y'].set_numeric(True)
 		spinner['Y'].set_value(datetime.datetime.now().year)
 		grid.attach(spinner['Y'], 1, 1, 1, 1)
-		#make the ui layout with ok button
-		self.win_SS.vbox.pack_start(grid, True, True, 0)
 		#ok button
 		button = Gtk.Button.new_with_mnemonic(label = _("OK"))
 		button.connect("clicked", self.specialSolarSubmit, spinner)
-		button.set_can_default(True)
-		self.win_SS.action_area.pack_start(button, True, True, 0)
-		button.grab_default()
+		#button.set_can_default(True)
+		grid.attach(button, 0, 2, 1, 1)
+		#self.win_SS.action_area.pack_start(button, True, True, 0)
+		#button.grab_default()
 		#cancel button
 		button = Gtk.Button.new_with_mnemonic(label = _("Cancel"))
 		button.connect("clicked", lambda w: self.win_SS.destroy())
-		self.win_SS.action_area.pack_start(button, True, True, 0)
-		self.win_SS.show_all()
+		grid.attach(button, 1, 2, 1, 1)
+		#self.win_SS.action_area.pack_start(button, True, True, 0)
+		self.win_SS.set_child(grid)
+		self.win_SS.present()
 
 	def specialSolarSubmit(self, widget, spinner):
 		y = spinner['Y'].get_value_as_int()
 		app.localToSolar(y)
-		self.win_SS.destroy()
+		self.win_SS.close()
 		self.updateChart()
 
 	def specialProgression_callback(self, action, parameter):
 		# create a new window
-		self.win_SSP = Gtk.Dialog(parent=self)
-		self.win_SSP.set_icon_from_file(app.cfg.iconWindow)
+		self.win_SSP = Gtk.Window()
+		""" set_icon """
+		#self.win_SSP.set_icon_from_file(app.cfg.iconWindow)
 		self.win_SSP.set_title(_("Enter Date"))
-		self.win_SSP.connect("delete_event", lambda w,e: self.win_SSP.destroy())
-		self.win_SSP.move(150,150)
-		self.win_SSP.set_border_width(5)
+		#self.win_SSP.connect("delete_event", lambda w,e: self.win_SSP.destroy())
+		#self.win_SSP.move(150,150)
+		#self.win_SSP.set_border_width(5)
 		self.win_SSP.set_size_request(320,180)
 		#create a grid
 		grid = Gtk.Grid()
 		grid.set_column_spacing(8)
 		grid.set_row_spacing(8)
-		grid.set_border_width(10)
+		#grid.set_border_width(10)
+		grid.set_vexpand(True)
 		# options
 		header = Gtk.Label(label=_("Select date for Secondary Progression")+":")
 		grid.attach(header, 0, 0, 6, 1)
@@ -3561,35 +3607,42 @@ class AstroWindow(Gtk.ApplicationWindow):
 		spinner['D'].set_value(datetime.datetime.now().day)
 		grid.attach(spinner['D'], 5, 1, 1, 1)
 		# pack_start(child, expand = True, fill = True, padding = 0)
-		hbox = Gtk.HBox(homogeneous = False, spacing = 8)
-		hbox.pack_start(Gtk.Label(label=_('Hour')+": "), False, False, 0)
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		hbox.append(Gtk.Label(label=_('Hour')+": "))
 		adjustment = Gtk.Adjustment(lower=0, upper=23, step_increment=1)
 		spinner['h'] = Gtk.SpinButton()
 		spinner['h'].props.adjustment = adjustment
 		spinner['h'].set_numeric(True)
 		spinner['h'].set_value(datetime.datetime.now().hour)
-		hbox.pack_start(spinner['h'], False, False, 0)
-		hbox.pack_start(Gtk.Label(label=_('Minute')+": "), False, False, 0)
+		hbox.append(spinner['h'])
+		hbox.append(Gtk.Label(label=_('Minute')+": "))
 		adjustment = Gtk.Adjustment(lower=0, upper=59, step_increment=1)
 		spinner['m'] = Gtk.SpinButton()
 		spinner['m'].props.adjustment = adjustment
 		spinner['m'].set_numeric(True)
 		spinner['m'].set_value(datetime.datetime.now().minute)
-		hbox.pack_start(spinner['m'], True, False, 0)
+		hbox.append(spinner['m'])
 		grid.attach(hbox, 1, 2, 5, 1)
 		#make the ui layout with ok button
-		self.win_SSP.vbox.pack_start(grid, False, True, 0)
+		#self.win_SSP.vbox.append(grid)
 		#ok button
+		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		button_box.set_homogeneous(True)
+		button_box.set_vexpand(False)
 		button = Gtk.Button.new_with_mnemonic(label = _("OK"))
 		button.connect("clicked", self.specialSecondaryProgressionSubmit, spinner)
-		button.set_can_default(True)
-		self.win_SSP.action_area.pack_start(button, False, True, 0)
-		button.grab_default()
+		#button.set_can_default(True)
+		button_box.prepend(button)
+		#self.win_SSP.action_area.pack_start(button, False, True, 0)
+		#button.grab_default()
 		#cancel button
 		button = Gtk.Button.new_with_mnemonic(label = _("Cancel"))
 		button.connect("clicked", lambda w: self.win_SSP.destroy())
-		self.win_SSP.action_area.pack_start(button, True, True, 0)
-		self.win_SSP.show_all()
+		button_box.append(button)
+		#self.win_SSP.action_area.pack_start(button, True, True, 0)
+		grid.attach(button_box, 0, 3, 5, 1)
+		self.win_SSP.set_child(grid)
+		self.win_SSP.present()
 
 	def specialSecondaryProgressionSubmit(self, widget, spinner):
 		y = spinner['Y'].get_value_as_int()
@@ -3613,117 +3666,119 @@ class AstroWindow(Gtk.ApplicationWindow):
 	  CuspAspects
 	"""
 	def tableMonthlyTimeline_callback(self, action, parameter):
-		dialog = Gtk.Dialog(title=_("Select Month in Year"),parent=self,flags=0)
-		dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT)
-		dialog.add_button(Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT)
-		dialog.set_destroy_with_parent(True)
-		dialog.connect("destroy", lambda w: dialog.destroy())
-		dialog.set_size_request(256, 128)
-		dialog.move(64,128)
-		#dialog.vbox.pack_start(Gtk.Label(label=_('Year')+": "), False, False, 0)
-		hbox = Gtk.HBox(homogeneous = False, spacing = 0)
+		self.dialog = Gtk.Window(title=_("Select Month in Year"))
+		self.dialog.set_destroy_with_parent(True)
+		self.dialog.connect("destroy", lambda w: dialog.destroy())
+		self.dialog.set_default_size(272, 128)
+		#dialog.move(64,128)
+		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		vbox.set_vexpand(True)
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		hbox.set_homogeneous(True)
 		label_year = Gtk.Label(label=_('Year')+": ")
-		hbox.pack_start(label_year, True, False, 8)
-		tMTspinner = {}
+		hbox.append(label_year)
+		self.tMTspinner = {}
 		adjustment = Gtk.Adjustment(lower=1, upper=2400, step_increment=1, page_increment=10)
-		tMTspinner['Y'] = Gtk.SpinButton()
-		tMTspinner['Y'].props.adjustment = adjustment
-		tMTspinner['Y'].set_numeric(True)
-		tMTspinner['Y'].set_value(datetime.datetime.now().year)
-		hbox.pack_start(tMTspinner['Y'], True, False, 8)
-		dialog.vbox.pack_start(hbox, False, False, 0)
-		hbox = Gtk.HBox(homogeneous = False, spacing = 0)
+		self.tMTspinner['Y'] = Gtk.SpinButton()
+		self.tMTspinner['Y'].props.adjustment = adjustment
+		self.tMTspinner['Y'].set_numeric(True)
+		self.tMTspinner['Y'].set_value(datetime.datetime.now().year)
+		hbox.append(self.tMTspinner['Y'])
+		vbox.append(hbox)
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		hbox.set_homogeneous(True)
 		label_month = Gtk.Label(label=_('Month')+": ")
-		hbox.pack_start(label_month, True, False, 8)
+		hbox.append(label_month)
 		adjustment = Gtk.Adjustment(lower=1, upper=12, step_increment=1)
-		tMTspinner['M'] = Gtk.SpinButton()
-		tMTspinner['M'].props.adjustment = adjustment
-		tMTspinner['M'].set_numeric(True)
-		tMTspinner['M'].set_value(datetime.datetime.now().month)
-		hbox.pack_start(tMTspinner['M'], True, False, 8)
-		dialog.vbox.pack_start(hbox, False, False, 0)
-		dialog.show_all()
-		ret = dialog.run()
-		if ret == Gtk.ResponseType.ACCEPT:
-			self.tMT_year = tMTspinner['Y'].get_value_as_int()
-			self.tMT_month = tMTspinner['M'].get_value_as_int()
-			dialog.destroy()
-			self.tableMonthlyTimelineShow()
-		else:
-			dialog.destroy()
-		return
+		self.tMTspinner['M'] = Gtk.SpinButton()
+		self.tMTspinner['M'].props.adjustment = adjustment
+		self.tMTspinner['M'].set_numeric(True)
+		self.tMTspinner['M'].set_value(datetime.datetime.now().month)
+		hbox.append(self.tMTspinner['M'])
+		vbox.append(hbox)
+		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		button_box.set_homogeneous(True)
+		#buttons
+		button = Gtk.Button.new_with_mnemonic(label=_('Cancel'))
+		button.connect("clicked", lambda w: dialog.destroy())
+		button_box.append(button)	
+		button = Gtk.Button.new_with_mnemonic(label=_('OK'))
+		button.connect("clicked", lambda w: self.tableMonthlyTimelineShow(spinner=self.tMTspinner))
+		button_box.prepend(button)		
+		#display window
+		vbox.append(button_box)
+		self.dialog.set_child(vbox)
+		self.dialog.present()
 
-	def tableMonthlyTimelineShow(self):
+	def tableMonthlyTimelineShow(self, spinner):
+		self.dialog.close()
 		self.tabletype="timeline"
+		self.tMT_year = spinner['Y'].get_value_as_int()
+		self.tMT_month = spinner['M'].get_value_as_int()
 		app.makeTimelineSVG(printing=None,y=self.tMT_year,m=self.tMT_month)
 			#generate window
-		self.win_TMT = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-		self.win_TMT.connect("destroy", lambda w: self.win_TMT.destroy())
-		self.win_TMT.set_title("app.org Timeline")
-		self.win_TMT.set_icon_from_file(app.cfg.iconWindow)
-		self.win_TMT.set_size_request(872, 732)
-		self.win_TMT.move(50,50)
-		vbox = Gtk.VBox()
-		hbox = Gtk.HBox(homogeneous = False, spacing = 0)
+		self.win_TMT = Gtk.Window()
+		#self.win_TMT.connect("destroy", lambda w: self.win_TMT.destroy())
+		self.win_TMT.set_title("OpenAstro.org Monthly Timeline")
+		""" >>> set_icon """
+		#self.win_TMT.set_icon_from_file(app.cfg.iconWindow)
+		self.win_TMT.set_default_size(1024, 732)
+		#self.win_TMT.move(50,50)
+		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		button = Gtk.Button.new_with_mnemonic(label=_('Print'))
-		button.connect("clicked", lambda w: self.tableMonthlyTimelinePrint(app.pages,pdf=False,window=self.win_TMT,name="timeline-%s.pdf"%(app.name)))
-		hbox.pack_start(button,False,False,0)
+		button.connect("clicked", lambda w: self.tablesChartPrint(app.pages,pdf=False,window=self.win_TMT,name="Timeline-%s.pdf"%(app.name)))
+		button_box.append(button)
 		button = Gtk.Button.new_with_mnemonic(label=_('Save as PDF'))
-		button.connect("clicked", lambda w: self.tableMonthlyTimelinePrint(app.pages,pdf=True,window=self.win_TMT,name="timeline-%s.pdf"%(app.name)))
-		hbox.pack_start(button,False,False,0)
-		vbox.pack_start(hbox,False,False,0)
-		drawing_area = Gtk.DrawingArea()
-		drawing_area.connect("draw", self.tableExposeEvent)
-		self.svg_TMT = Rsvg.Handle.new_from_file(app.cfg.tempfilenametable)
-		w = self.svg_TMT.get_property("width")
-		h = min(self.svg_TMT.get_property("height"), app.height)
-		self.win_TMT.move(50, 50)
-		self.win_TMT.set_size_request(w, h)
-		scrolledwindow = Gtk.ScrolledWindow()
-		scrolledwindow.add(drawing_area)
-		scrolledwindow.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-		vbox.pack_start(scrolledwindow, True, True, 0)
-		self.win_TMT.add(vbox)
-		self.win_TMT.show_all()
+		button.connect("clicked", lambda w: self.tablesChartPrint(app.pages,pdf=True,window=self.win_TMT,name="Timeline-%s.pdf"%(app.name)))
+		button_box.append(button)
+		vbox.append(button_box)
+		self.win_TMT.image = ViewSVG(app.cfg.tempfilenametable)
+		self.win_TMT.image.set_vexpand(True)
+		self.win_TMT.image.set_hexpand(True)
+		self.win_TMT.image.set_valign(Gtk.Align.CENTER)
+		self.win_TMT.image.set_halign(Gtk.Align.CENTER)
+		scrolled_window = Gtk.ScrolledWindow()
+		scrolled_window.set_child(self.win_TMT.image)
+		vbox.append(scrolled_window)
+		self.win_TMT.set_child(vbox)
+		self.win_TMT.present()
 
-	def tableMonthlyTimelinePrint(self, pages, pdf, window, name):
+	def tablesChartPrint(self, pages, pdf, window, name):
 		settings = None
-		print_op = Gtk.PrintOperation()
-		print_op.set_unit(Gtk.Unit.MM)
+		window.print_op = Gtk.PrintOperation()
+		window.print_op.set_unit(Gtk.Unit.MM)
 		if settings != None: 
-			print_op.set_print_settings(settings)
-		print_op.connect("begin_print", self.tableMonthlyTimelinePrintBegin, app.pages)
-		print_op.connect("draw_page", self.tableMonthlyTimelinePrintDraw)
+			window.print_op.set_print_settings(settings)
+		window.print_op.connect("begin_print", self.tablesChartPrintBegin, app.pages)
+		window.print_op.connect("draw_page", self.tablesChartPrintDraw)
+		res = None
 		if pdf:
-			chooser = Gtk.FileChooserDialog(title=_("Select Export Filename"),action=Gtk.FileChooserAction.SAVE)
-			chooser.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
-			chooser.add_button(Gtk.STOCK_SAVE, Gtk.ResponseType.OK)
-			chooser.set_current_folder(app.cfg.homedir)
-			chooser.set_current_name(name)
-			filter = Gtk.FileFilter()
-			filter.set_name(_("PDF Files (*.pdf)"))
-			filter.add_pattern("*.pdf")
-			chooser.add_filter(filter)
-			response = chooser.run()
-			if response == Gtk.ResponseType.OK:
-				print_op.set_export_filename(chooser.get_filename())
-				chooser.destroy()
-				res = print_op.run(Gtk.PrintOperationAction.EXPORT, window)	
-			else:
-				chooser.destroy()
-				print_op.cancel()
-				res = None
+			initial_name = name
+			gio_filters = Gio.ListStore.new(Gtk.FileFilter)
+			gio_filters.append(item=FILTER_ALL_FILES)
+			gio_filters.append(item=FILTER_PDF_FILES)
+			self.file_to_save(filters=gio_filters, name=initial_name, export_app=self.tablesChartPDF)
 		else:
-			res = print_op.run(Gtk.PrintOperationAction.PRINT_DIALOG, window)		
+			res = window.print_op.run(Gtk.PrintOperationAction.PRINT_DIALOG, window)		
 		if res == Gtk.PrintOperationResult.ERROR:
 			error_dialog = Gtk.MessageDialog(window,0,Gtk.MESSAGE_ERROR,Gtk.ButtonS_CLOSE,"Error printing:\n")
 			error_dialog.set_destroy_with_parent(True)
 			error_dialog.connect("response", lambda w,id: w.destroy())
 			error_dialog.show()
 		elif res == Gtk.PrintOperationResult.APPLY:
-			settings = print_op.get_print_settings()
+			settings = window.print_op.get_print_settings()
 
-	def tableMonthlyTimelinePrintBegin(self, operation, context, pages):
+	def tablesChartPDF(self, local_file):
+		if (self.tabletype == "timeline"):
+			window = self.win_TMT
+		elif (self.tabletype == "cuspaspects"):
+			window = self.win_TCA
+		window.print_op.set_export_filename(local_file.get_path())
+		res = window.print_op.run(Gtk.PrintOperationAction.EXPORT, window)
+		window.close()
+
+	def tablesChartPrintBegin(self, operation, context, pages):
 		operation.set_n_pages(app.pages)
 		operation.set_use_full_page(False)
 		ps = Gtk.PageSetup()
@@ -3731,7 +3786,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 		ps.set_paper_size(Gtk.PaperSize(Gtk.PAPER_NAME_A4))
 		operation.set_default_page_setup(ps)
 
-	def tableMonthlyTimelinePrintDraw(self, operation, context, page_nr):
+	def tablesChartPrintDraw(self, operation, context, page_nr):
 		cr = Gtk.PrintContext.get_cairo_context(context)
 		#print options
 		printing={}
@@ -3744,7 +3799,6 @@ class AstroWindow(Gtk.ApplicationWindow):
 		if(self.tabletype == "timeline"):
 			app.makeTimelineSVG(printing=printing,y=self.tMT_year,m=self.tMT_month)
 			#draw svg for printing
-			Rsvg.set_default_dpi(900)
 			svg = Rsvg.Handle.new_from_file(app.cfg.tempfilenametableprint)
 		elif(self.tabletype == "cuspaspects"):
 			app.makeCuspAspectsSVG(printing=printing)
@@ -3778,62 +3832,57 @@ class AstroWindow(Gtk.ApplicationWindow):
 		self.tabletype="cuspaspects"
 		app.makeCuspAspectsSVG(printing=None)
 		#generate window
-		self.win_TCA = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+		self.win_TCA = Gtk.Window()
 		self.win_TCA.connect("destroy", lambda w: self.win_TCA.destroy())
 		self.win_TCA.set_title("OpenAstro.org Cusp Aspects")
-		self.win_TCA.set_icon_from_file(app.cfg.iconWindow)
-		self.win_TCA.set_size_request(872,732)
-		self.win_TCA.move(50,50)
-		vbox = Gtk.VBox()
-		hbox = Gtk.HBox(homogeneous = False, spacing = 0)
+		""" >>> set_icon """
+		#self.win_TCA.set_icon_from_file(app.cfg.iconWindow)
+		self.win_TCA.set_default_size(924,732)
+		#self.win_TCA.move(50,50)
+		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		vbox.set_vexpand(True)
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		button = Gtk.Button.new_with_mnemonic(label=_('Print'))
-		button.connect("clicked", lambda w: self.tableMonthlyTimelinePrint(pages=1,pdf=False,window=self.win_TCA,name="cusp-aspects-%s.pdf"%(app.name)))
-		hbox.pack_start(button,False,False,0)
+		button.connect("clicked", lambda w: self.tablesChartPrint(pages=1,pdf=False,window=self.win_TCA,name="CuspAspects-%s.pdf"%(app.name)))
+		hbox.append(button)
 		button = Gtk.Button.new_with_mnemonic(label=_('Save as PDF'))
-		button.connect("clicked", lambda w: self.tableMonthlyTimelinePrint(pages=1,pdf=True,window=self.win_TCA,name="cusp-aspects-%s.pdf"%(app.name)))
-		hbox.pack_start(button,False,False,0)
-		vbox.pack_start(hbox,False,False,0)
-		drawing_area = Gtk.DrawingArea()
-		drawing_area.connect("draw", self.tableExposeEvent)
-		self.svg_TCA = Rsvg.Handle.new_from_file(app.cfg.tempfilenametable)
-		w = self.svg_TCA.get_property("width")
-		h = min(self.svg_TCA.get_property("height"), app.height)
-		self.win_TCA.move(50, 50)
-		self.win_TCA.set_size_request(w, h)
-		scrolledwindow = Gtk.ScrolledWindow()
-		scrolledwindow.add(drawing_area)
-		scrolledwindow.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-		vbox.pack_start(scrolledwindow,True,True,0)
-		self.win_TCA.add(vbox)
-		self.win_TCA.show_all()
+		button.connect("clicked", lambda w: self.tablesChartPrint(pages=1,pdf=True,window=self.win_TCA,name="CuspAspects-%s.pdf"%(app.name)))
+		hbox.append(button)
+		vbox.append(hbox)
+		self.win_TCA.image = ViewSVG(app.cfg.tempfilenametable)
+		self.win_TCA.image.set_vexpand(True)
+		self.win_TCA.image.set_hexpand(True)
+		self.win_TCA.image.set_valign(Gtk.Align.CENTER)
+		self.win_TCA.image.set_halign(Gtk.Align.CENTER)
+		scrolled_window = Gtk.ScrolledWindow()
+		scrolled_window.set_child(self.win_TCA.image)
+		vbox.append(scrolled_window)
+		self.win_TCA.set_child(vbox)
+		self.win_TCA.present()
 
-	"""
-	 Menu 'Zoom'
-	"""
+	""" Menu 'Zoom' """
 	def zoom_callback(self, action, parameter):
 		""" check for zoom level and draw """
 		z_level = parameter.get_string()
 		action.set_state(parameter)
 		#action.set_state(parameter)
-		ratio = self.draw.ratio
+		ratio = self.image.scale
 		if z_level == 'zIn':
-			self.draw.ratio += 0.1
+			self.image.scale += 0.1
 		elif z_level == 'z80':
-			self.draw.ratio = 0.8
+			self.image.scale = 0.8
 		elif z_level == 'z100':
-			self.draw.ratio = 1.0
+			self.image.scale = 1.0
 		elif z_level == 'z150':
-			self.draw.ratio = 1.5
+			self.image.scale = 1.5
 		elif z_level == 'z200':
-			self.draw.ratio = 2.0
+			self.image.scale = 2.0
 		elif z_level == 'zOut':
 			if ratio >= 0.2:
-				self.draw.ratio -= 0.1
+				self.image.scale -= 0.1
 			else:
 				return
-		#redraw svg
-		self.draw.scale_image()
-		self.draw.queue_draw()
+		self.image.queue_resize()
 
 	"""
 	'Extra' Menu Items Functions
@@ -3841,148 +3890,87 @@ class AstroWindow(Gtk.ApplicationWindow):
 	  importdb'
 	"""
 	def exportdb_callback(self, action, parameter):
-		chooser = Gtk.FileChooserDialog(parent=self,title=None,action=Gtk.FileChooserAction.SAVE)
-		chooser.add_button(Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL)
-		chooser.add_button(Gtk.STOCK_SAVE,Gtk.ResponseType.OK)
-		chooser.set_current_folder(app.cfg.homedir)
-		chooser.set_current_name('openastro-database.sql')
-		filter = Gtk.FileFilter()
-		filter.set_name(_("OpenAstro.org Databases (*.sql)"))
-		filter.add_pattern("*.sql")
-		chooser.add_filter(filter)
-		response = chooser.run()
-		if response == Gtk.ResponseType.OK:
-			copyfile(app.cfg.peopledb, chooser.get_filename())
-		elif response == Gtk.ResponseType.CANCEL:
-			dprint('Dialog closed, no files selected')	
-		chooser.destroy()
+		gio_filters = Gio.ListStore.new(Gtk.FileFilter)
+		gio_filters.append(item=FILTER_ALL_FILES)
+		gio_filters.append(item=FILTER_SQL_FILES)
+		self.file_to_save(filters=gio_filters, name='openastro-database.sql', export_app=self.exportSQL)
+
+	def exportSQL(self, local_file):
+		copyfile(app.cfg.peopledb, local_file.get_path())
 
 	def importdb_callback(self, action, parameter):
-		chooser = Gtk.FileChooserDialog(parent=self, title=_("Please select database to import"),action=Gtk.FileChooserAction.OPEN)
-		chooser.add_button(Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL)
-		chooser.add_button(Gtk.STOCK_OPEN,Gtk.ResponseType.OK)
-		chooser.set_current_folder(app.cfg.homedir)
-		filter = Gtk.FileFilter()
-		filter.set_name(_("OpenAstro.org Databases (*.sql)"))
-		filter.add_pattern("*.sql")
-		chooser.add_filter(filter)
-		response = chooser.run()
-		if response == Gtk.ResponseType.OK:
-			app.db.databaseMerge(app.cfg.peopledb,chooser.get_filename())
-		elif response == Gtk.ResponseType.CANCEL:
-			dprint('Dialog closed, no files selected')	
-		chooser.destroy()			
+		gio_filters = Gio.ListStore.new(Gtk.FileFilter)
+		gio_filters.append(item=FILTER_ALL_FILES)
+		gio_filters.append(item=FILTER_SQL_FILES)
+		self.file_to_open(filters=gio_filters, name='openastro-database.sql', import_app=self.importSQL)
+
+	def importSQL(self, local_file):
+		app.db.databaseMerge(app.cfg.peopledb, local_file.get_path())
 
 	# callback function for about (see the AboutDialog example)
 	def about_callback(self, action, parameter):
-		about = Gtk.AboutDialog(transient_for = self, modal = True)
-		about.set_logo(GdkPixbuf.Pixbuf.new_from_file(app.cfg.about));
-		about.connect("response", lambda w,e: about.destroy())
-		about.connect("close", lambda w,e: about.destroy())
-		about.set_program_name("Gtk+ OpenAstro.org - Open Source Astrology")
+		about = Gtk.AboutDialog(transient_for=self, modal=True)
+		about.set_logo(Gdk.Texture.new_from_filename('about.xpm'));
+		about.set_program_name("Gtk4 OpenAstro.org - Open Source Astrology")
 		about.set_size_request(480, -1)
-		about.set_version("Version " + app.cfg.version)
+		about.set_version('Gtk4 Version ' + VERSION)
 		about.set_authors(["Pelle van der Scheer, Amsterdam / The Netherlands"])
 		documenters = ["Erich Küster, Krefeld / Nortrhine-Westfalia / Germany"]
 		about.set_copyright("Copyright © 2012-2026 Pelle van der Scheer. All rights reserved.")
-		with open(app.cfg.comments, "r") as f:
+		with open('COMMENTS', "r") as f:
 			comments = f.read()
 		about.set_comments(comments)
-		with open(app.cfg.license, "r") as f:
+		with open('LICENSE', "r") as f:
 			license = f.read()
 		about.set_license(license)
-		about.set_website("https://python-gtk-3-tutorial.readthedocs.io/en/latest/");
-		about.set_website_label("The Python GTK+ 3 Tutorial — Python GTK+ 3 Tutorial 3.4 documentation")
+		about.set_website("https://pygobject.gnome.org/tutorials/gtk4.html");
+		about.set_website_label("GTK4 — PyGObject")
 		# show the aboutdialog
-		about.show_all()
+		about.present()
 
 	# a callback function to destroy the aboutdialog
 	def on_close(self, action, parameter):
 		self.close()
 
-	"""
-	def expose(self, drawing, event):
-		### widget is Gtk.DrawingArea, event is cairo.Context ###
-		if self.svg is not None:
-			self.width = self.svg.get_property("width") #*self.zoom
-			self.height = self.svg.get_property("height") #*self.zoom
-			drawing.set_size_request(self.width, self.height)
-			self.viewport.x=0
-			self.viewport.y=0
-			self.viewport.width = self.width
-			self.viewport.height = self.height
-			if self.window_state:
-				self.viewport.width = app.screen_width
-				self.viewport.height = app.screen_height
-			self.svg.render_document(event,self.viewport)
-	"""
-
-	def on_maximize_toggle(self, action, value):
-		action.set_state(value)
-		self.window_state = value.get_boolean()
-		if self.window_state:
-			self.maximize()
-		else:
-			self.unmaximize()
-		self.draw.queue_draw()
-
-	""" https://stackoverflow.com/questions/38113876 """
-	def on_window_state_event(self, widget, event):
-		self.window_state = bool(event.new_window_state & Gdk.WindowState.MAXIMIZED)
-		self.draw.queue_draw()
-
-	# callback function for copy_action
-	def close_callback(self, action, parameter):
-		print("\"Copy\" activated")
-
-### END AstroWindow ###
-
-### BEGIN AstroApplication ###
 class AstroApplication(Gtk.Application):
 	def __init__(self, *args, **kwargs):
 		super().__init__(
 			*args,
 			application_id=APPLICATION_ID,
 			flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE,
-			**kwargs
+			**kwargs,
 		)
-		self.window = None
-
-	def do_command_line(self, command_line):
-		options = command_line.get_options_dict()
-		self.activate()
-		return 0
-
-	def do_startup(self):
-		# FIRST THING TO DO: do_startup()
-		Gtk.Application.do_startup(self)
-
-		# action without a state created
-		new_action = Gio.SimpleAction.new("new", None)
-		# action connected to the callback function
-		new_action.connect("activate", self.new_callback)
-		# action added to the application
-		self.add_action(new_action)
-
-		# action without a state created
-		quit_action = Gio.SimpleAction.new("quit", None)
-		# action connected to the callback function
-		quit_action.connect("activate", self.quit_callback)
-		# action added to the application
-		self.add_action(quit_action)
-		self.set_accels_for_action("app.quit", ["<Primary>Q"])
-
-		""" Configuration / Data Base / Calculations / Drawing / Window """
-		# get dimensions of screen
 		display = Gdk.Display.get_default()
 		monitor = display.get_primary_monitor()
 		geometry = monitor.get_geometry()
 		self.screen_width = geometry.width
 		self.screen_height = geometry.height
+		#calculate available screen size, correct dimensions
+		self.height = self.screen_height-OFFSET
+		self.width = self.height * RATIO
+		self.window = None
+
+		self.add_main_option(
+			"local",
+			ord("l"),
+			GLib.OptionFlags.NONE,
+			GLib.OptionArg.NONE,
+			"AstroChart Standakone",
+			None,
+		)
+
+	def do_startup(self):
+		Gtk.Application.do_startup(self)
+
+		quit_action = Gio.SimpleAction.new("quit", None)
+		quit_action.connect("activate", self.on_quit)
+		self.add_action(quit_action)
+		self.set_accels_for_action("app.quit", ["<Primary>Q"])
+		""" Configuration / Data Base / Calculations / Window """
 		#configuration
-		self.cfg = openAstroCfg()
+		self.cfg = OpenAstroCfg()
 		# handle data bases
-		self.db = openAstroSqlite()
+		self.db = OpenAstroSqlite()
 		#get label configuration
 		self.label = self.db.getLabel()
 		#check for home
@@ -4036,25 +4024,19 @@ class AstroApplication(Gtk.Application):
 		self.zodiac_element = ['fire','earth','air','water','fire','earth','air','water','fire','earth','air','water']
 		#get color configuration
 		self.colors = self.db.getColors()
+		builder = Gtk.Builder.new_from_string(MENU_XML, -1)
+		self.menubar = builder.get_object("MenuBar")
+		self.set_menubar(self.menubar)
 
 	def do_activate(self):
-		# a builder to add the UI designed with Glade to the grid:
-		builder = Gtk.Builder()
-		# get the ui string
-		builder.add_from_string(MENU_XML)
-		# we use the method Gtk.Application.set_menubar(menubar) to add the menubar
-		# and the menu to the application (Note: NOT the window!)
-		self.set_menubar(builder.get_object("MenuBar"))
-		# menubar is class Gio.Menu
-		self.set_app_menu(builder.get_object("AppMenu"))
-		# menubar has 11 menu items
-		# allow a single window and raise any existing ones
-		if not self.window:
+		# allow only a single window and raise any existing ones
+		if self.window is None:
 			# Windows are associated with the application
 			# when the last one is closed the application shuts down
-			self.window = AstroWindow(self)
-		#show window
-		self.window.show_all()
+			self.window = AstroWindow(application=self, title="AstroChart Window")
+			#self.window.menu = menubar
+		self.window.set_default_size(self.width, self.height)
+		self.window.present()
 
 	def utcToLocal(self):
 		# make local time variables from global UTC
@@ -4285,7 +4267,7 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 		self.width = self.height * RATIO
 		chartX = CHARTX
 		chartY = CHARTY
-		chartY += BARY
+		chartY += OFFSET
 		#check for printer
 		if printing == None:
 			svgWidth = self.width
@@ -5783,20 +5765,21 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 	"""
 	def specialTimeZone(self, tz):
 		# create a new window
-		self.win_TZ = Gtk.Dialog(title=_("Daylight Saving Time Detected"),parent=None,flags=0)
-		self.win_TZ.set_icon_from_file(app.cfg.iconWindow)
-		self.win_TZ.connect("delete_event", lambda w,e: self.win_TZ.destroy())
-		self.win_TZ.move(150, 150)
-		self.win_TZ.set_border_width(5)
-		self.win_TZ.set_size_request(300,100)
+		self.win_TZ = Gtk.Window(title=_("Daylight Saving Time Detected"))
+		""" set_icon """
+		#self.win_TZ.set_icon_from_file(app.cfg.iconWindow)
+		#self.win_TZ.connect("delete_event", lambda w,e: self.win_TZ.destroy())
+		#self.win_TZ.move(150, 150)
+		#self.win_TZ.set_border_width(5)
+		self.win_TZ.set_default_size(300,100)
 		self.win_TZ.set_modal()
-		tz_box = self.win_TZ.get_content_area()
+		tz_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		tz_box.set_spacing(12)
 		header = Gtk.Label(label=_("Change Timezone ?"))
-		tz_box.pack_start(header, False, False, 0)
-		entry_box = Gtk.HBox(homogeneous = False, spacing = 8)
+		tz_box.append(header)
+		entry_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		_label = Gtk.Label(label=_("Actual Timezone:"))
-		entry_box.pack_start(_label, True, False, 0)
+		entry_box.append(_label)
 		tz_split = tz.split('/')
 		_entry = Gtk.Entry()
 		_entry.set_max_length(16)
@@ -5804,26 +5787,27 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 		_entry.set_alignment(xalign=1)
 		_entry.set_editable(False)
 		_entry.set_text(tz_split[0])
-		entry_box.pack_start(_entry, False, False, 0)
+		entry_box.append(_entry)
 		_label = Gtk.Label(label=_(" / "))
-		entry_box.pack_start(_label, False, False, 0)
+		entry_box.append(_label)
 		tz_entry = Gtk.Entry()
 		tz_entry.set_max_length(32)
 		tz_entry.set_width_chars(24)
 		tz_entry.set_text(tz_split[1])
 		tz_entry.connect("activate", self.specialTimeZoneSubmit, tz_entry)
-		entry_box.pack_start(tz_entry, False, False, 0)
-		tz_box.pack_start(entry_box, False, False, 0)
+		entry_box.append(tz_entry)
+		tz_box.append(entry_box)
 		hints = Gtk.Label(label=_("Change Timezone and press <Enter>"))
-		tz_box.pack_start(hints, True, True, 0)
+		tz_box.append(hints)
 		button = Gtk.Button.new_with_mnemonic(label = _("Cancel"))
-		button.set_can_default(True)
+		#button.set_can_default(True)
 		button.connect("clicked", lambda w: self.win_TZ.destroy())
-		self.win_TZ.action_area.pack_end(child=button, expand=False, fill=False, padding=16)
+		self.win_TZ.set_child(tz_box)
+		#self.win_TZ.action_area.pack_end(child=button, expand=False, fill=False, padding=16)
 		#self.win_TZ.action_area.pack_start(button, True, True, 0)
-		self.win_TZ.show_all()
+		self.win_TZ.present()
 		tz_entry.grab_focus()
-		self.win_TZ.run()
+		#self.win_TZ.run()
 
 	def specialTimeZoneSubmit(self, widged, entry):
 		s = self.timezone_str
@@ -5953,70 +5937,21 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 		name=name.replace(' ','_')
 		return name
 
-	# callback function for new
-	def new_callback(self, action, parameter):
-		pass
+	def do_command_line(self, command_line):
+		options = command_line.get_options_dict()
+		# convert GVariantDict -> GVariant -> dict
+		options = options.end().unpack()
+		if "local" in options:
+			LOCAL = True
+			pass
+		self.activate()
+		return 0
 
-	# callback function for quit
-	def quit_callback(self, action, parameter):
-		sys.exit()
-### END AstroApplication ###
+	def on_quit(self, action, parameter):
+		self.quit()
 
-""" source: https://stackoverflow.com/q/58685222 """
-class ViewSVG(Gtk.DrawingArea):
-	def __init__(self, path, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		self.connect("draw", self.on_draw)
-		self.setupSVG(path)
-
-	def setupSVG(self, path):
-		self.ratio = 1.0
-		with open(path, 'r') as file:
-			svg = file.read()
-		loader = GdkPixbuf.PixbufLoader()
-		loader.write(svg.encode())
-		loader.close()
-		self.pixbuf = loader.get_pixbuf()
-		self.original_image = self.pixbuf
-		self.displayed_image = self.pixbuf
-		self.set_size_request(
-			self.displayed_image.get_width(),
-			self.displayed_image.get_height())
-
-	def on_button_zoom_in_clicked(self, widget):
-		self.ratio += 0.05
-		self.scale_image()
-		self.queue_draw()
-
-	def on_button_zoom_out_clicked(self, widget):
-		self.ratio -= 0.05
-		if self.ratio < 0.05:
-			self.ratio = 0.05
-			return
-		self.scale_image()
-		self.queue_draw()
-
-	def scale_image(self):
-		w = self.original_image.get_width() * self.ratio
-		h = self.original_image.get_height() * self.ratio
-		# pixbuf interpolation type
-		self.displayed_image = self.original_image.scale_simple(w, h, InterpType.BILINEAR)
-
-	def on_draw(self, drawable, cairo_context):
-		pixbuf = self.displayed_image	
-		# New line. Get DrawingArea's window and resize it.
-		drawable.get_window().resize(pixbuf.get_width(), pixbuf.get_height())		   
-		drawable.set_size_request(pixbuf.get_width(), pixbuf.get_height())
-		Gdk.cairo_set_source_pixbuf(cairo_context, pixbuf, 0, 0)
-		cairo_context.paint()
-
-	""" source: https://stackoverflow.com/questions/38113876 """
-	def on_window_state_event(self, widget, event):
-		self.window_state = bool(event.new_window_state & Gdk.WindowState.MAXIMIZED)
-		self.queue_draw()
-### END ViewSVG ###
-
-app = AstroApplication()
-exit_status = app.run(sys.argv)
-sys.exit(exit_status)
+if __name__ == "__main__":
+	app = AstroApplication()
+	exit_status = app.run(sys.argv)
+	sys.exit(exit_status)
 

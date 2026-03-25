@@ -47,7 +47,7 @@ if "--local" in sys.argv:
 	LOCAL = True
 #for debugging set to True
 DEBUG = False
-VERSION = "1.1.68"
+VERSION = "1.1.70"
 #radius of zodiac
 RADIUS = 240
 # default dimensions of SVG viewBox, ratio shouls be near sqrt(2) = 1.41421356

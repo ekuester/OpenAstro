@@ -23,10 +23,11 @@ To preserve the great OpenAstro program by Pelle van der Scheer [1] from oblivio
 ### Enhancements
 The published version 1.1.59 is the last release authorized by Pelle van der Scheer and dated from roundabout 2021. Somewhat enhanced versions can be found here. Several deprecations were eliminated. The chart window is shown in a scrolling window, which can be maximized. Zoom levels are available in several variants.<br/>
 For switching to GTK4 in near future the UIManager was removed and replaced by Gio and GLib class functions. Besides 'openastro' the new 'astroChartBuilder.py' is now largely completed and presented as replacement.<br/>
+The migration from Gtk3 to Gtk4 is mostly completed. This was not trivial. The result however is quite impressive, yet some must be done...
 BUT as formerly said...the original ideas of Pelle remained untouched.
 
 ### Discussion
-This program is written in python with use of pyGtk for the Gnome GTK3 environment of Linux. For simplicity the .py ending of the executable is omitted, so start a standalone version with
+This program is written in python with use of pyGtk for the Gnome GTK3 environment of Linux. For simplicity the .py ending of the executable is omitted, so start a standalone version with:
 
 ```
 # execute once to make program executable
@@ -35,10 +36,15 @@ chmod +x ./openastro
 ./openastro --local
 # alternatively for first testing
 ./astroChartBuilder.py --local
+# Two new Gtk4 Versions
+# start a simple SVG Viewr
+./astroChartShow.py
+# start the new Gtk4 OpenAstro
+./astroChart.py --local
 ```
-The program is localized in 25 languages in folder 'locale'. For the new 'astroChartBuilder' localization is incomplete.
+The program is localized in 25 languages in folder 'locale'. Localization for the 'AstroChart programs' is incomplete.
 
-Achieve a system-wide installation by copying files accordingly to your distribution. To generate a RPM package (suitable for Red Hat, Fedora, OpenSUSE and so on) a .spec file can be found in directory "packages".<br/>
+Achieve a system-wide installation of 'Gtk3 OpenAstro final' by copying files accordingly to your distribution. To generate a RPM package (suitable for Red Hat, Fedora, OpenSUSE and so on) a .spec file can be found in directory "packages".<br/>
 Generally the program requires installation of 'pyswisseph' [2] aka 'python3-swisseph' on RPM-systems. For this purpose the package 'python3-swisseph' can be generated with the here added, corresponding .spec file. There are some incompatibilities with newer python versions higher 3.8 and pyswisseph higher 2.1 ... which are eliminated in using the here presented software <br/>
 
 ```
