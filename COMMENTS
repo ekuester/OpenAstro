@@ -6,12 +6,12 @@ Now working with pyswisseph-2.10.3
 The programs are written in python with use of pyGtk
 for the Gnome GTK3 resp. GTK4 environment of Linux.
 
-There are four programs:
-1) openastro v1.1.70 Gtk3 final
+Look at four programs:
+1) openastro v1.1.70 Gtk3 final Gtk3
 2( astroChartBuilder.py v1.1.90 Gtk3
 3) astroChartShow.py Gtk44 - a simple SVG Viewer
-4) astroChart.py v1.1.90 - Gtk44
+4) astroChart.py v1.1.100 - Gtk4
 
 In continuation:
 Erich Küster, Krefeld / Northrhine-Westfalia / Germany
-Last Edit: Wednesday, March 25, 2026
+Last Edit: Tuesday, April 9, 2026

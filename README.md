@@ -23,7 +23,9 @@ To preserve the great OpenAstro program by Pelle van der Scheer [1] from oblivio
 ### Enhancements
 The published version 1.1.59 is the last release authorized by Pelle van der Scheer and dated from roundabout 2021. Somewhat enhanced versions can be found here. Several deprecations were eliminated. The chart window is shown in a scrolling window, which can be maximized. Zoom levels are available in several variants.<br/>
 For switching to GTK4 in near future the UIManager was removed and replaced by Gio and GLib class functions. Besides 'openastro' the new 'astroChartBuilder.py' is now largely completed and presented as replacement.<br/>
-The migration from Gtk3 to Gtk4 is mostly completed. This was not trivial. The result however is quite impressive, yet some must be done...
+
+### Migrating from Gtk3 to Gzk4
+The migration from Gtk3 to Gtk4 is pratically completed. This was not trivial, since replacing Treeview with ColumnView and ComboBox with DropDown presented some tricky challenges. The result, however, is quite impressive.
 BUT as formerly said...the original ideas of Pelle remained untouched.
 
 ### Discussion

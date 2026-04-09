@@ -1446,10 +1446,43 @@ class ViewSVG(Gtk.Widget):
 			height = self.texture.get_intrinsic_height() * self.scale
 			return (height, height, -1, -1)
 
-def dprint(str):
-	""" debug print function """
-	if "--debug" in sys.argv or DEBUG:
-		print('%s' % str)
+class EventData(GObject.GObject):
+	def __init__(self, ident: gint, name: str, birth: str, location: str):
+		super(EventData, self).__init__()
+		self.id = ident
+		self.name = name
+		self.birth = birth
+		self.location = location
+
+def setup(widget, item):
+	"""Setup the widget to show in the Gtk.Listview"""
+	label = Gtk.Label()
+	label.props.xalign = 0.0
+	item.set_child(label)
+
+def bind_ident(widget, item):
+	"""bind data from the store object to the widget"""
+	label = item.get_child()
+	obj = item.get_item()
+	label.set_label(obj.id)
+
+def bind_name(widget, item):
+	"""bind data from the store object to the widget"""
+	label = item.get_child()
+	obj = item.get_item()
+	label.set_label(obj.name)
+
+def bind_birth(widget, item):
+	"""bind data from the store object to the widget"""
+	label = item.get_child()
+	obj = item.get_item()
+	label.set_label(obj.birth)
+
+def bind_location(widget, item):
+	"""bind data from the store object to the widget"""
+	label = item.get_child()
+	obj = item.get_item()
+	label.set_label(obj.location)
 
 class AstroWindow(Gtk.ApplicationWindow):
 	def __init__(self, *args, **kwargs):
@@ -1568,8 +1601,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 		importdb_action.connect("activate", self.importdb_callback)
 		self.add_action(importdb_action)
 
-		self.first_time = True
-		self.updateUI()
+		self.updateUI(first_time=True)
 
 		# display astrological chart
 		box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -1641,7 +1673,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 			s.close()
 		return
 
-	def updateUI(self):
+	def updateUI(self, first_time):
 		#get menubar of application
 		parent_app = self.get_application()
 		menu = parent_app.get_menubar()
@@ -1662,7 +1694,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 				item = t_item.substitute(db='historydb', idx=entry[0], label=entry[1])
 				items.append(item)
 			history_items = '\n'.join(items)
-		if self.first_time:
+		if first_time:
 			#generate 'Chart' menu
 			chart_builder = Gtk.Builder()
 			chart_builder.add_from_string(CHART_XML)
@@ -1676,7 +1708,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 			history_action.connect("activate", self.historydb_callback)
 			self.add_action(history_action)
 		else:
-			menu.remove(0)
+			menu.remove(1)
 		if len(items) > 0:
 			history_xml = BEGIN_XML + history_items + END_XML
 		else:
@@ -1685,6 +1717,8 @@ class AstroWindow(Gtk.ApplicationWindow):
 		update_builder = Gtk.Builder()
 		update_builder.add_from_string(history_xml)
 		history_menu = update_builder.get_object("UpdateUI")
+		if not first_time:
+			self.chart_menu.remove(3)
 		self.chart_menu.insert_submenu(3, 'History', history_menu)
 		#becomes first item in menubar
 		menu.insert_submenu(1, 'Chart', self.chart_menu)
@@ -1697,7 +1731,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 			item = t_item.substitute(db='quickopendb', idx=entry['id'], label=entry['name'])
 			items.append(item)
 		quick_open_items = '\n'.join(items)
-		if self.first_time:
+		if first_time:
 			#generate 'Event' menu
 			event_builder = Gtk.Builder()
 			event_builder.add_from_string(EVENT_XML)
@@ -1720,9 +1754,10 @@ class AstroWindow(Gtk.ApplicationWindow):
 		update_builder = Gtk.Builder()
 		update_builder.add_from_string(quick_open_xml)
 		quick_open_menu = update_builder.get_object("UpdateUI")
+		if not first_time:
+			self.event_menu.remove(1)
 		self.event_menu.insert_submenu(1, 'Quick Open Database', quick_open_menu)
 		menu.insert_submenu(2, 'Event', self.event_menu)
-		self.first_time = False
 
 	def historydb_callback(self, action, parameter):
 		idx = parameter.get_int32()
@@ -1866,7 +1901,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 			except GLib.Error:
 				return
 			app.importOAC(local_file)
-			self.eventData(False)
+			self.eventData(edit=False)
 		elif gio_task.get_name() == 'gtk_file_dialog_save':
 			try:
 				local_file = file_dialog.save_finish(gio_task)
@@ -2034,14 +2069,19 @@ class AstroWindow(Gtk.ApplicationWindow):
 			viewport.height = Gtk.PrintContext.get_height(context)
 			svg.render_document(cr, viewport)
 
-	def quickopendb_callback(self, action, parameter):
-		idx = parameter.get_int32()
-		action.set_state(parameter)
-		for entry in self.DB:
-			if entry['id'] == idx:
-				self.updateChartList(None, entry)
-				break
-
+	"""
+	 Menu 'Event'
+	  eventDataNew
+	  eventData_callback
+	  eventData
+	  citySearch
+	  eventDataChangedContbox
+	  eventDataChangedCountrybox
+	  eventDataChangedProvbox(
+	  eventDataChangedCitybox
+	  eventDataSaveAsk
+	  quickopendb
+	"""
 	def eventDataNew_callback(self, action, parameter):
 		# default location
 		app.location = app.home_location
@@ -2075,29 +2115,33 @@ class AstroWindow(Gtk.ApplicationWindow):
 	def eventData(self, edit):
 		self.settingsLocationMode = False
 		# create a new window
-		self.window2 = Gtk.Window()
-		#??????????????
+		self.window2 = Gtk.Window(title=_("Edit Event Details"), modal=True)
+		""" set_icon changed in GTK4 """
 		#self.window2.set_icon_from_file(app.cfg.iconWindow)
-		self.window2.set_title(_("Edit Event Details"))
+		self.window2.set_title()
 		#self.window2.connect("delete_event", lambda w,e: self.window2.destroy())
 		#self.window2.move(150,150)
 		#self.window2.set_border_width(10)
 		# check internet connection
 		self.checkInternetConnection()
+		#vertical box for all
+		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, vexpand=True)
+		vbox.props.margin_start = 16
+		vbox.props.margin_end = 16
+		vbox.props.margin_top = 16
+		vbox.props.margin_bottom = 16
 		# create a grid
 		grid = Gtk.Grid()
 		grid.set_column_spacing(8)
 		grid.set_row_spacing(8)
-		self.window2.set_child(grid)
 		#Name entry
-		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
 		grid.attach(hbox, 0, 1, 4, 1)
-		label = Gtk.Label(label = _("Name")+":")
+		label = Gtk.Label(label = _("Name")+":", halign=Gtk.Align.END)
 		hbox.append(child=label)
-		self.name = Gtk.Entry()
+		self.name = Gtk.Entry(text=app.name, halign=Gtk.Align.END)
 		self.name.set_max_length(50)
 		self.name.set_width_chars(25)
-		self.name.set_text(app.name)
 		hbox.prepend(child=self.name)
 		# name entry (non editable)
 		self.ename = Gtk.Label(label=app.name)
@@ -2129,52 +2173,61 @@ class AstroWindow(Gtk.ApplicationWindow):
 			#otherwise use geonames sql database and get nearest geoname
 			self.GEON_nearest = app.db.gnearest(app.geolat, app.geolon)
 			# continents
-			self.contbox = Gtk.ComboBox()
-			self.contstore = Gtk.ListStore(str, str)
+			self.continents = Gtk.DropDown()
+			"""
 			cell = Gtk.CellRendererText()
-			self.contbox.pack_start(cell, False)
-			self.contbox.add_attribute(cell, 'text', 0)
-			grid.attach(self.contbox, 0, 3, 1, 1)
-			#self.contbox.set_wrap_width(1)
+			self.continents.pack_start(cell, False)
+			self.continents.add_attribute(cell, 'text', 0)
+			"""
+			grid.attach(self.continents, 0, 3, 1, 1)
+			#self.continents.set_wrap_width(1)
 			sql = 'SELECT * FROM continent ORDER BY name ASC'
 			app.db.gquery(sql)
-			continentinfo = []
+			self.continent_infos = []
+			continent_info = Gtk.StringList()
 			self.searchcontinent = {}
-			i = 0
 			activecont = 3
-			for row in app.db.gcursor:
+			for i, row in enumerate(app.db.gcursor):
 				self.searchcontinent[row['code']] = i
 				if row['code'] == self.GEON_nearest['continent']:
 					activecont = i
 					self.GEON_nearest['continent'] = None
-				self.contstore.append([row['name'], row['code']])
-				i += 1
+				items = [row['name'], row['code']]
+				self.continent_infos.append(items)
+				continent_info.append(row['name'])
 			app.db.gclose()
-			self.contbox.set_model(self.contstore)
+			#self.continents.set_model(self.contstore)
+			self.continents.set_model(model=continent_info)
 			# countries
-			self.countrybox = Gtk.ComboBox()
+			self.countries = Gtk.DropDown()
+			"""
 			cell = Gtk.CellRendererText()
-			self.countrybox.pack_start(cell, False)
-			self.countrybox.add_attribute(cell, 'text', 0)
-			grid.attach(self.countrybox, 1, 3, 1, 1)
-			#self.countrybox.set_wrap_width(1) 
-			self.countrybox.connect('changed', self.eventDataChangedCountrybox)
+			self.countries.pack_start(cell, False)
+			self.countries.add_attribute(cell, 'text', 0)
+			"""
+			grid.attach(self.countries, 1, 3, 1, 1)
+			#self.countries.set_wrap_width(1) 
+			self.countries.connect('notify::selected-item', self.eventDataChangedCountrybox)
 			# provinces
-			self.provbox = Gtk.ComboBox()
+			self.provinces = Gtk.DropDown()
+			"""
 			cell = Gtk.CellRendererText()
-			self.provbox.pack_start(cell, False)
-			self.provbox.add_attribute(cell, 'text', 0)
-			grid.attach(self.provbox, 2, 3, 1, 1)
-			#self.provbox.set_wrap_width(1) 
-			self.provbox.connect('changed', self.eventDataChangedProvbox)
+			self.provinces.pack_start(cell, False)
+			self.provinces.add_attribute(cell, 'text', 0)
+			"""
+			grid.attach(self.provinces, 2, 3, 1, 1)
+			#self.provinces.set_wrap_width(1) 
+			self.provinces.connect('notify::selected-item', self.eventDataChangedProvbox)
 			# cities
-			self.citybox = Gtk.ComboBox()
+			self.cities = Gtk.DropDown()
+			"""
 			cell = Gtk.CellRendererText()
-			self.provbox.pack_start(cell, False)
-			self.citybox.add_attribute(cell, 'text', 0)
-			grid.attach(self.citybox, 3, 3, 1, 1)
-			#self.citybox.set_wrap_width(2) 
-			self.citybox.connect('changed', self.eventDataChangedCitybox)
+			self.cities.pack_start(cell, False)
+			self.cities.add_attribute(cell, 'text', 0)
+			"""
+			grid.attach(self.cities, 3, 3, 1, 1)
+			#self.cities.set_wrap_width(2) 
+			self.cities.connect('notify::selected-item', self.eventDataChangedCitybox)
 			# add search in database
 			label = Gtk.Label(label=_("Search City")+":")
 			grid.attach(label, 1, 4, 1, 1)
@@ -2184,8 +2237,11 @@ class AstroWindow(Gtk.ApplicationWindow):
 			self.citysearch.set_width_chars(24)
 			grid .attach(self.citysearch, 2, 4, 1, 1)
 			# CAVEAT: ChangedContbox callback relies on other box changes
-			self.contbox.connect('changed', self.eventDataChangedContbox)
-			self.contbox.set_active(activecont)
+			self.continents.connect('notify::selected-item', self.eventDataChangedContbox)
+			#for dropdown
+			self.continents.set_selected(activecont)
+			#for combobox
+			#self.continents.set_active(activecont)
 			self.citysearchbutton = Gtk.Button.new_with_mnemonic(label = _("Search"))
 			self.citysearchbutton.connect("clicked", self.citySearch)
 			self.citysearch.connect("activate", self.citySearch)
@@ -2237,7 +2293,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 		hbox.prepend(child=self.timeH)
 		label = Gtk.Label(label=_("Min")+":")
 		hbox.prepend(child=label)
-		adjustment = Gtk.Adjustment(lower=1, upper=59, step_increment=1)
+		adjustment = Gtk.Adjustment(lower=0, upper=59, step_increment=1)
 		self.timeM = Gtk.SpinButton()
 		self.timeM.props.adjustment = adjustment
 		self.timeM.set_numeric(True)
@@ -2262,24 +2318,26 @@ class AstroWindow(Gtk.ApplicationWindow):
 		if edit:
 			self.savebutton = Gtk.Button.new_with_mnemonic(label = _("Save"))
 			self.savebutton.connect("clicked", self.openDatabaseEditAsk)
-			buttonbox.prepend(child=self.savebutton)
+			buttonbox.append(child=self.savebutton)
 		else:
 			self.savebutton = Gtk.Button.new_with_mnemonic(label = _("Add to Database"))
 			self.savebutton.connect("clicked", self.eventDataSaveAsk)
-			buttonbox.prepend(child=self.savebutton)
+			buttonbox.append(child=self.savebutton)
 		# Apply button
 		button = Gtk.Button.new_with_mnemonic(label = _("Apply"))
 		button.connect("clicked", self.eventDataApply)
-		buttonbox.prepend(child=button)
+		buttonbox.append(child=button)
   		#ok button
 		if edit == False:
 			button = Gtk.Button.new_with_mnemonic(label = _("OK"))
 			button.connect("clicked", self.eventDataSubmit)
-			buttonbox.prepend(child=button)
+			buttonbox.append(child=button)
 		# cancel button
 		button = Gtk.Button.new_with_mnemonic(label = _("Cancel"))
 		button.connect("clicked", lambda w: self.window2.destroy())
-		buttonbox.prepend(child=button)
+		buttonbox.append(child=button)
+		vbox.append(grid)
+		self.window2.set_child(vbox)
 		self.window2.present()
 
 	def citySearch(self, widget):
@@ -2320,117 +2378,116 @@ class AstroWindow(Gtk.ApplicationWindow):
 			#set continent
 			sql = "SELECT continent FROM countryinfo WHERE isoalpha2=? LIMIT 1"
 			app.db.gquery(sql,(result["country"],))
-			self.contbox.set_active(self.searchcontinent[app.db.gcursor.fetchone()[0]])
+			self.continents.set_selected(self.searchcontinent[app.db.gcursor.fetchone()[0]])
 			#set country
-			self.countrybox.set_active(self.searchcountry[result["country"]])
+			self.countries.set_selected(self.searchcountry[result["country"]])
 			#set admin1
-			self.provbox.set_active(self.searchprov[result["admin1"]])
+			self.provinces.set_selected(self.searchprov[result["admin1"]])
 			#set city
-			self.citybox.set_active(self.searchcity[result["geonameid"]])
+			self.cities.set_selected(self.searchcity[result["geonameid"]])
 		return
 
-	def eventDataChangedContbox(self, combobox):
-		model = combobox.get_model()
-		index = combobox.get_active()
-
-		store = Gtk.ListStore(str,str)
-		store.clear()
+	def eventDataChangedContbox(self, dropdown, _pspec):
+		model = dropdown.get_model()
+		index = dropdown.get_selected()
+		info = self.continent_infos[index]
 		sql = "SELECT * FROM countryinfo WHERE continent=? ORDER BY name ASC"
-		app.db.gquery(sql,(model[index][1],))
-		list = []
-		i=0
+		app.db.gquery(sql,(info[1],))
+		country_info = Gtk.StringList()
+		self.country_infos = []
+		#self.country_list = []
 		activecountry=0
 		self.searchcountry={}
-		for row in app.db.gcursor:
+		for i, row in enumerate(app.db.gcursor):
 			self.searchcountry[row['isoalpha2']]=i
 			if self.GEON_nearest['country'] == row['isoalpha2']:
 				activecountry=i
-				self.GEON_nearest['country']=None
-			list.append((row['name'],row['isoalpha2']))
-			i+=1
+				self.GEON_nearest['country'] = None
+			items = [row['name'],row['isoalpha2']]
+			self.country_infos.append(items)
+			#self.country_list.append((row['name'],row['isoalpha2']))
+			country_info.append(row['name'])
 		app.db.gclose()
-		for i in range(len(list)):
-			store.append(list[i])
-		self.countrybox.set_model(store)
-		self.countrybox.set_active(activecountry) 
+		self.countries.set_model(country_info)
+		self.countries.set_selected(activecountry) 
 		return
       
-	def eventDataChangedCountrybox(self, combobox):
-		model = combobox.get_model()
-		index = combobox.get_active()
-		self.provlist = Gtk.ListStore(str,str,str,str)
-		self.provlist.clear()
+	def eventDataChangedCountrybox(self, dropdown, _pspec):
+		model = dropdown.get_model()
+		index = dropdown.get_selected()
+		info = self.country_infos[index]
 		sql = "SELECT * FROM admin1codes WHERE country=? ORDER BY admin1 ASC"
-		app.db.gquery(sql,(model[index][1],))
-		list = []
-		i=0
-		activeprov=0
+		app.db.gquery(sql,(info[1],))
+		self.province_infos = []
+		province_info = Gtk.StringList()
+		activeprov = 0
 		self.searchprov={}
-		for row in app.db.gcursor:
+		for i, row in enumerate(app.db.gcursor):
 			self.searchprov[row["admin1"]] = i
 			if self.GEON_nearest['admin1'] == row['admin1']:
-				activeprov=i
+				activeprov = i
 				self.GEON_nearest['admin1'] = None
-			list.append((row['province'],row['country'],row['admin1'],model[index][0]))
-			i+=1
+			items = [row['province'],row['country'],row['admin1'],info[0]]
+			self.province_infos.append(items)
+			province_info.append(row['province'])
 		app.db.gclose()
-		for i in range(len(list)):
-			self.provlist.append(list[i])
-		self.provbox.set_model(self.provlist)
-		self.provbox.set_active(activeprov) 
+		self.provinces.set_model(province_info)
+		self.provinces.set_selected(activeprov) 
 		return
 
-	def eventDataChangedProvbox(self, combobox):
-		model = combobox.get_model()
-		index = combobox.get_active()
-
-		self.citylist = Gtk.ListStore(str,str,str,str,str,str,str,str)
-		self.citylist.clear()
+	def eventDataChangedProvbox(self, dropdown, _pspec):
+		model = dropdown.get_model()
+		index = dropdown.get_selected()
+		info = self.province_infos[index]
 		sql = 'SELECT * FROM geonames WHERE country=? AND admin1=? ORDER BY name ASC'
-		app.db.gquery(sql,(model[index][1],model[index][2]))
-		list = []
-		i=0
-		activecity=0
-		self.searchcity={}
-		for row in app.db.gcursor:
+		app.db.gquery(sql,(info[1],info[2]))
+		self.city_infos = []
+		city_info = Gtk.StringList()
+		activecity = 0
+		self.searchcity = {}
+		for i, row in enumerate(app.db.gcursor):
 			self.searchcity[row["geonameid"]]=i
 			if self.GEON_nearest['geonameid'] == row['geonameid']:
-				activecity=i
+				activecity = i
 				self.GEON_nearest['geonameid'] = None
-			list.append((row['name'], str(row['latitude']), str(row['longitude']), model[index][3], model[index][0], row['country'], str(row['geonameid']), row['timezone']))
-			i+=1
+			items = [row['name'], str(row['latitude']), str(row['longitude']), info[3], info[0], row['country'], str(row['geonameid']), row['timezone']]
+			self.city_infos.append(items)
+			city_info.append(row['name'])
 		app.db.gclose()
-		for i in range(len(list)):
-			self.citylist.append(list[i])
-		self.citybox.set_model(self.citylist)
-		self.citybox.set_active(activecity) 
+		self.cities.set_model(city_info)
+		self.cities.set_selected(activecity) 
 		return
 
-	def eventDataChangedCitybox(self, combobox):
-		model = combobox.get_model()
-		index = combobox.get_active()
+	def eventDataChangedCitybox(self, dropdown, _pspec):
+		model = dropdown.get_model()
+		index = dropdown.get_selected()
+		info = self.city_infos[index]
 		#change label for eventdata
-		self.GEON_lat = model[index][1]
-		self.GEON_lon = model[index][2]
-		self.GEON_loc = '%s, %s, %s' % (model[index][0],model[index][4],model[index][3])
-		self.GEON_cc = model[index][5]
-		self.GEON_id = model[index][6]
-		self.GEON_tzstr = model[index][7]
+		self.GEON_lat = info[1]
+		self.GEON_lon = info[2]
+		self.GEON_loc = '%s, %s, %s' % (info[0],info[4],info[3])
+		self.GEON_cc = info[5]
+		self.GEON_id = info[6]
+		self.GEON_tzstr = info[7]
+
 		dprint( 'evenDataChangedCitybox: %s:%s:%s:%s:%s:%s' % (self.GEON_loc, self.GEON_lat, self.GEON_lon, self.GEON_cc, self.GEON_tzstr, self.GEON_id) )
-		#settingslocationmode
+
 		if self.settingsLocationMode:
-			self.LLoc.set_text(_('Location')+': %s'%(self.GEON_loc))
-			self.LLat.set_text(_('Latitude')+': %s'%(self.GEON_lat))
-			self.LLon.set_text(_('Longitude')+': %s'%(self.GEON_lon))
+			#set home location
+			self.LLoc.set_text('{}: '.format(self.GEON_loc))
+			self.LLat.set_text('{}: '.format(self.GEON_lat))
+			self.LLon.set_text('{}: '.format(self.GEON_lon))
 		else:
+			#set event data
 			self.entry2.set_text(' %s: %s\n %s: %s\n %s: %s' % (_('Latitude'), self.GEON_lat, _('Longitude'), self.GEON_lon, _('Location'), self.GEON_loc) )
 
 	def eventDataSaveAsk(self, widget):
-		#check for duplicate name
+		""" test for duplicate entry and save when unique """
 		en = app.db.getDatabase()
+		#test for duplicate
 		for i in range(len(en)):
 			if en[i]["name"] == self.name.get_text():
-				dialog = Gtk.Window(title=_('Found Duplicate'))
+				dialog = Gtk.Window(title=_('Found Duplicate'),modal=True)
 				""" set_icon """
 				#dialog.set_icon_from_file(app.cfg.iconWindow)
 				dialog.set_default_size(256,-1)
@@ -2439,59 +2496,52 @@ class AstroWindow(Gtk.ApplicationWindow):
 				double.set_wrap(True)
 				vbox.append(double)
 				button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+				button_box.set_homogeneous(True)
 				#OK button
 				button = Gtk.Button.new_with_mnemonic(label=_("OK"))
-				button.connect("clicked", lambda w: dialog.destroy())
-				button_box.append(button)
+				button.connect("clicked",  lambda w: dialog.destroy())
 				button_box.append(button)
 				vbox.append(button_box)
 				dialog.set_child(vbox)
 				dialog.present()
 				return
 		#ask for confirmation
-		dialog = Gtk.Window(title=_('Question'))
-		""" set_icon """
-		#dialog.set_icon_from_file(app.cfg.iconWindow)
-		dialog.set_default_size(256,-1)
-		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-		confirm = Gtk.Label(label=_('Are you sure you want to save this entry to the database?'))
-		confirm.set_wrap(True)
-		vbox.append(confirm)
-		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-		#OK button
-		button = Gtk.Button.new_with_mnemonic(label=_("OK"))
-		button.connect("clicked", self.eventDataSave, dialog)
-		button_box.append(button)
-		#Cancel button
-		button = Gtk.Button.new_with_mnemonic(label=_("Cancel"))
-		button.connect("clicked", lambda w: dialog.destroy())
-		button_box.append(button)
-		vbox.append(button_box)
-		dialog.set_child(vbox)
-		dialog.present()
-		return
+		alert_dialog = Gtk.AlertDialog()
+		alert_dialog.set_message("Caution")
+		confirm = 'Are you sure you want to save < {0} > to the database?'.format(self.name.props.text)
+		alert_dialog.set_detail(confirm)
+		alert_dialog.set_modal(True)
+		alert_dialog.set_buttons(["Cancel", "OK"])
+		alert_dialog.choose(parent=self, cancellable=None, callback=self.on_save_perform, user_data=None)
+   
+	def on_save_perform(self, source_obj, async_res, user_data):
+		result = source_obj.choose_finish(async_res)
+		if result == 1:
+			#OK button clicked
+			self.window2.close()
+			self.eventDataSave()
+		else:
+			self.window2.present()
 
-	def eventDataSave(self, dialog):
+	def eventDataSave(self):
 		#update chart data
 		self.updateChartData()
-		#set query to save
-		#add data from event_natal table
+		#add data into event_natal table
 		sql='INSERT INTO event_natal (id, name, year, month, day, hour, geolon, geolat, altitude, location, timezone, notes, image, countrycode, geonameid, timezonestr, extra) VALUES (null, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
 		tuple=(app.name,app.year,app.month,app.day,app.hour, app.geolon, app.geolat, app.altitude, app.location, app.timezone, '', '', app.countrycode, app.geonameid, app.timezonestr, '')
 		app.db.pquery([sql],[tuple])
-		dprint('saved to database: '+app.name)
-		dialog.destroy()
-		self.updateUI()
+		dprint('Saved to Database: '+app.name)
+		self.updateUI(first_time=False)
 
 	def eventDataSubmit(self, widget):
 		#check if no changes were made
 		if self.name.get_text() == app.name and \
-		self.dateY.get_text() == str(app.year_loc) and \
-		self.dateM.get_text() == '%(#)02d' % {'#':app.month_loc} and \
-		self.dateD.get_text() == '%(#)02d' % {'#':app.day_loc} and \
-		self.eH.get_text() == '%(#)02d' % {'#':app.hour_loc} and \
-		self.eM.get_text() == '%(#)02d' % {'#':app.minute_loc} and \
-		self.eS.get_text() == '%(#)02d' % {'#':app.second_loc}:
+		self.dateY.get_value_as_int() == str(app.year_loc) and \
+		self.dateM.get_value_as_int() == app.month_loc and \
+		self.dateD.get_value_as_int() == app.day_loc and \
+		self.timeH.get_value_as_int() == app.hour_loc and \
+		self.timeM.get_value_as_int() == app.minute_loc and \
+		self.timeS.get_value_as_int() == app.second_loc:
 			if self.iconn and self.geoCC.get_text() == app.countrycode and self.geoLoc.get_text() == app.location.partition(',')[0]:
 				# go ahead ;)
 				self.window2.destroy()
@@ -2502,7 +2552,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 			self.window2.destroy()
 			#update history
 			app.db.addHistory()
-			self.updateUI()
+			self.updateUI(first_time=False)
 			return
 		else:
 			return
@@ -2524,69 +2574,79 @@ class AstroWindow(Gtk.ApplicationWindow):
 		""" set_icon """
 		#self.win_OD.set_icon_from_file(app.cfg.iconWindow)
 		self.win_OD.set_title(_('Open Database Entry'))
-		self.win_OD.set_default_size(600, 450)
+		self.win_OD.set_default_size(480, 480)
 		#self.win_OD.move(150,150)
 		#self.win_OD.connect("delete_event", lambda w,e: self.win_OD.destroy())
+		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, vexpand=True)
+		vbox.props.margin_start = 12
+		vbox.props.margin_end = 12
+		vbox.props.margin_top = 6
+		vbox.props.margin_bottom = 6
 		#listmodel
-		self.listmodel = Gtk.ListStore(int, str,str,str)
-		self.win_OD_treeview = Gtk.TreeView(model=self.listmodel)
-		#selection
-		self.win_OD_selection = self.win_OD_treeview.get_selection()
-		self.win_OD_selection.set_mode(Gtk.SelectionMode.SINGLE)
-		#treeview columns
-		self.win_OD_tvcolumn0 = Gtk.TreeViewColumn(_('Id'))
-		self.win_OD_tvcolumn1 = Gtk.TreeViewColumn(_('Name'))
-		self.win_OD_tvcolumn2 = Gtk.TreeViewColumn(_('Birth Date (Local)'))
-		self.win_OD_tvcolumn3 = Gtk.TreeViewColumn(_('Location'))
+		self.win_OD.selection = Gtk.SingleSelection()
+		self.listmodel = Gio.ListStore.new(EventData)
+		self.win_OD.selection.set_model(self.listmodel)
 		#add data from event_natal table
 		if extraDB is not None:
-			self.win_OD_treeview.set_enable_search(False)
+			#self.win_OD_treeview.set_enable_search(False)
 			self.DB = extraDB
 		else:
-			self.win_OD_treeview.set_enable_search(True)
+			#self.win_OD_treeview.set_enable_search(True)
 			self.DB = app.db.getDatabase()
-		for i in range(len(self.DB)):
-			h,m,s = app.decHour(float(self.DB[i]["hour"]))
-			dt_utc=datetime.datetime(int(self.DB[i]["year"]), int(self.DB[i]["month"]), int(self.DB[i]["day"]), h, m, s)
-			dt = dt_utc + datetime.timedelta(seconds=float(self.DB[i]["timezone"])*float(3600))
+		for data in self.DB:
+			h,m,s = app.decHour(float(data["hour"]))
+			dt_utc = datetime.datetime(int(data["year"]), int(data["month"]), int(data["day"]), h, m, s)
+			dt = dt_utc + datetime.timedelta(seconds=float(data["timezone"])*float(3600))
 			birth_date = str(dt.year)+'-%(#1)02d-%(#2)02d %(#3)02d:%(#4)02d:%(#5)02d' % {'#1':dt.month,'#2':dt.day,'#3':dt.hour,'#4':dt.minute,'#5':dt.second}
-			self.listmodel.append([self.DB[i]["id"],self.DB[i]["name"],birth_date,self.DB[i]["location"]])
-		#add columns to treeview
-		self.win_OD_treeview.append_column(self.win_OD_tvcolumn0)
-		self.win_OD_treeview.append_column(self.win_OD_tvcolumn1)
-		self.win_OD_treeview.append_column(self.win_OD_tvcolumn2)
-		self.win_OD_treeview.append_column(self.win_OD_tvcolumn3)
-		#cell renderers
-		cell0 = Gtk.CellRendererText()
-		cell1 = Gtk.CellRendererText()
-		cell2 = Gtk.CellRendererText()
-		cell3 = Gtk.CellRendererText()
-		# add cells to columns
-		self.win_OD_tvcolumn0.pack_start(cell0, True)
-		self.win_OD_tvcolumn1.pack_start(cell1, True)
-		self.win_OD_tvcolumn2.pack_start(cell2, True)
-		self.win_OD_tvcolumn3.pack_start(cell3, True)
-		#set the cell attributes to the listmodel column
-		self.win_OD_tvcolumn0.set_attributes(cell0, text = 0)
-		self.win_OD_tvcolumn1.set_attributes(cell1, text = 1)
-		self.win_OD_tvcolumn2.set_attributes(cell2, text = 2)
-		self.win_OD_tvcolumn3.set_attributes(cell3, text = 3)
-		#set treeview options
-		self.win_OD_treeview.set_search_column(1)
-		self.win_OD_tvcolumn0.set_sort_column_id(0)
-		self.win_OD_tvcolumn1.set_sort_column_id(1)
-		self.win_OD_tvcolumn2.set_sort_column_id(2)
-		self.win_OD_tvcolumn3.set_sort_column_id(3)
-		#add treeview to scrolledwindow
+			event_data = EventData(ident=str(data["id"]),name=data["name"],birth=birth_date,location=data["location"])
+			self.listmodel.append(event_data)
 		scrolled_window = Gtk.ScrolledWindow()
 		scrolled_window.set_vexpand(True)
-		scrolled_window.set_child(self.win_OD_treeview)
-		scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.ALWAYS)
-		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-		vbox.set_vexpand(True)
+
+		column_view = Gtk.ColumnView()
+		column_view.props.show_row_separators = False
+		column_view.props.show_column_separators = True
+
+		id_col = Gtk.ColumnViewColumn.new("Id")
+		id_col.set_resizable(True)
+		#id_col.set_fixed_width(112)
+		id_factory = Gtk.SignalListItemFactory()
+		id_factory.connect("setup", setup)
+		id_factory.connect("bind", bind_ident)
+		id_col.set_factory(id_factory)
+		column_view.append_column(id_col)
+
+		name_col = Gtk.ColumnViewColumn.new("Name")
+		name_col.set_resizable(True)
+		#name_col.set_fixed_width(112)
+		name_factory = Gtk.SignalListItemFactory()
+		name_factory.connect("setup", setup)
+		name_factory.connect("bind", bind_name)
+		name_col.set_factory(name_factory)
+		column_view.append_column(name_col)
+
+		birth_col = Gtk.ColumnViewColumn.new("Birth Date")
+		birth_col.set_resizable(True)
+		#birth_col.set_fixed_width(112)
+		birth_factory = Gtk.SignalListItemFactory()
+		birth_factory.connect("setup", setup)
+		birth_factory.connect("bind", bind_birth)
+		birth_col.set_factory(birth_factory)
+		column_view.append_column(birth_col)
+
+		location_col = Gtk.ColumnViewColumn.new("Location")
+		location_col.set_resizable(True)
+		#location_col.set_fixed_width(112)
+		location_factory = Gtk.SignalListItemFactory()
+		location_factory.connect("setup", setup)
+		location_factory.connect("bind", bind_location)
+		location_col.set_factory(location_factory)
+		column_view.append_column(location_col)
+		column_view.set_model(self.win_OD.selection)
+		scrolled_window.set_child(column_view)
 		vbox.append(scrolled_window)
 		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-		button_box.set_spacing(4)
+		button_box.set_spacing(16)
 		button_box.set_homogeneous(False)
 		#buttons
 		if extraDB is None:
@@ -2623,22 +2683,20 @@ class AstroWindow(Gtk.ApplicationWindow):
 			button.connect("clicked", lambda w: self.win_OD.destroy())
 			button_box.append(button)
 		#display window
-		self.win_OD_treeview.connect("row-activated", lambda w,e,f: self.openDatabaseOpen(w))
 		vbox.append(button_box)
 		self.win_OD.set_child(vbox)
-		self.win_OD_treeview.set_model(model=self.listmodel)
+		""" self.win_OD_treeview.set_model(model=self.listmodel) """
 		self.win_OD.present()
 		return
 
 	def openDatabaseEdit(self, widget):
-		model = self.win_OD_selection.get_selected()[0]
-		iter = self.win_OD_selection.get_selected()[1]
-		for i in range(len(self.DB)):
-			if self.DB[i]["id"] == model.get_value(iter,0):
-				self.oDE_list = self.DB[i]
+		#get selection of selected item
+		active = self.win_OD.selection.get_selected()
+		self.oDE_list = self.DB[active]
 		app.type="Radix"
 		app.charttype = app.label["radix"]
 		app.transit = False
+		#self.updateChartList(widget, self.oDE_list)
 		self.updateChartList(widget, self.oDE_list)
 		self.eventData(edit=True)
 		return
@@ -2646,127 +2704,133 @@ class AstroWindow(Gtk.ApplicationWindow):
 	def openDatabaseEditAsk(self, widget):
 		#check for duplicate name without duplicate id
 		en = app.db.getDatabase()
-		for i in range(len(en)):
-			if en[i]["name"] == self.name.get_text() and self.oDE_list["id"] != en[i]["id"]:
-				dialog = Gtk.Window(title=_('Duplicate'))
-
-				dialog.add_button(Gtk.STOCK_OK, Gtk.ResponseType.DELETE_EVENT)
+		for i, row in enumerate(en):
+			if row["name"] == self.name.props.text and self.oDE_list["id"] == row["id"]:
+				dialog = Gtk.Window(title=_('Found Duplicate'),modal=True)
 				""" set_icon """
 				#dialog.set_icon_from_file(app.cfg.iconWindow)
-				dialog.connect("response", lambda w,e: dialog.destroy())
-				dialog.connect("close", lambda w,e: dialog.destroy())
-				dialog.vbox.append(Gtk.Label(label=_('There is allready an entry for this name, please choose another')))
+				dialog.set_default_size(256,-1)
+				vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+				double = Gtk.Label(label=_('There is allready an entry for this name, please choose another'))
+				double.set_wrap(True)
+				vbox.append(double)
+				button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+				button_box.set_homogeneous(True)
+				#OK button
+				button = Gtk.Button.new_with_mnemonic(label=_("OK"))
+				button.connect("clicked",  lambda w: dialog.destroy())
+				button_box.append(button)
+				vbox.append(button_box)
+				dialog.set_child(vbox)
 				dialog.present()
 				return
 		#ask for confirmation
-		dialog=Gtk.Dialog(
-			title=_('Question'),
-			parent=self.window2,
-			flags=0
-		)
-		dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT)
-		dialog.add_button(Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT)
-		dialog.set_destroy_with_parent(True)
-		""" set_icon """
-		#dialog.set_icon_from_file(app.cfg.iconWindow)
-		dialog.connect("close", lambda w,e: dialog.destroy())
-		dialog.connect("response",self.openDatabaseEditSave)
-		dialog.vbox.append(Gtk.Label(label=_('Are you sure you want to Save?')))
-		dialog.present()
+		alert_dialog = Gtk.AlertDialog()
+		alert_dialog.set_message("Caution")
+		confirm = 'Are you sure you want to save < {0} > to the database?'.format(self.name.props.text)
+		alert_dialog.set_detail(confirm)
+		alert_dialog.set_modal(True)
+		alert_dialog.set_buttons(["Cancel", "OK"])
+		alert_dialog.choose(parent=self, cancellable=None, callback=self.on_save_record, user_data=None)
+   
+	def on_save_record(self, source_obj, async_res, user_data):
+		result = source_obj.choose_finish(async_res)
+		if result == 1:
+			#OK button clicked
+			self.win_OD.destroy()
+			self.openDatabaseEditSave()
+		else:
+			self.win_OD.present()
+			dprint('rejected save to database')
 
 	def openDatabaseOpen(self, widget):
-		model = self.win_OD_selection.get_selected()[0]
-		iter = self.win_OD_selection.get_selected()[1]
-		for i in range(len(self.DB)):
-			if self.DB[i]["id"] == model.get_value(iter,0):
-				list = self.DB[i]
+		active = self.win_OD.selection.get_selected()
+		self.oDE_list = self.DB[active]
 		app.type="Radix"
 		app.charttype = app.label["radix"]
 		app.transit = False
-		self.updateChartList(widget, list)
+		self.updateChartList(widget, self.oDE_list)
 		self.win_OD.destroy()
 
-	def openDatabaseEditSave(self, widget, response_id):
-		if response_id == Gtk.ResponseType.ACCEPT:
-			#update chart data
-			self.updateChartData()
-			#set query to save
-			sql = 'UPDATE event_natal SET name=?,year=?,month=?,day=?,hour=?, geolon=?, geolat=?, altitude=?, location=?, timezone=?, notes=?, image=?, countrycode=?, timezonestr=?, geonameid=? WHERE id=?'
-			values = (app.name, app.year, app.month, app.day, app.hour, app.geolon, app.geolat, app.altitude, app.location, app.timezone, '', '', app.countrycode,app.timezonestr,app.geonameid,self.oDE_list["id"])
-			app.db.pquery([sql],[values])
-			dprint('saved edit to database: '+app.name)
-			widget.destroy()
-			self.window2.destroy()
-			self.win_OD.destroy()
-			self.openDatabase_callback( None, None)
-			self.updateUI()
-		else:
-			widget.destroy()
-			dprint('rejected save to database')
+	def openDatabaseEditSave(self):
+		#update chart data
+		self.updateChartData()
+		#set query to save
+		sql = 'UPDATE event_natal SET name=?,year=?,month=?,day=?,hour=?, geolon=?, geolat=?, altitude=?, location=?, timezone=?, notes=?, image=?, countrycode=?, timezonestr=?, geonameid=? WHERE id=?'
+		values = (app.name, app.year, app.month, app.day, app.hour, app.geolon, app.geolat, app.altitude, app.location, app.timezone, '', '', app.countrycode,app.timezonestr,app.geonameid,self.oDE_list["id"])
+		app.db.pquery([sql],[values])
+		dprint('After editing saved to database: '+app.name)
+		#widget.destroy()
+		self.window2.destroy()
+		#self.win_OD.destroy()
+		self.openDatabase(extraDB=None)
+		#self.openDatabase_callback( None, None)
+		self.updateUI(first_time=False)
 
 	def openDatabaseDel(self, widget):
-		#get name from selection
-		model = self.win_OD_selection.get_selected()[0]
-		iter = self.win_OD_selection.get_selected()[1]
-		for i in range(len(self.DB)):
-			if self.DB[i]["id"] == model.get_value(iter,0):
-				self.ODDlist = self.DB[i]
-		name = self.ODDlist["name"]
-		dialog = Gtk.Window(title=_('Question'))
-		vbox = Gtk.Box(orientation=Gtk.Orientation.Vertical)
-		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		#get selection of selected item
+		active = self.win_OD.selection.get_selected()
+		del_record = self.DB[active]
+		choosen_name = del_record['name']
+		#ask for confirmation
+		alert_dialog = Gtk.AlertDialog()
+		alert_dialog.set_message("Caution")
+		confirm = _('You are about to delete record < {0} >. Proceed?').format(choosen_name)
+		alert_dialog.set_detail(confirm)
+		alert_dialog.set_modal(True)
+		alert_dialog.set_buttons(["Cancel", "OK"])
+		alert_dialog.choose(parent=self, cancellable=None, callback=self.on_delete_perform, user_data=del_record)
+   
+	def on_delete_perform(self, source_obj, async_res, record):
+		result = source_obj.choose_finish(async_res)
+		if result == 1:
+			#OK button clicked
+			self.win_OD.close()
+			self.openDatabaseDelDo(record)
+		self.win_OD.present()
 
+	def openDatabaseDelDo(self, del_rec):
+		#get id from selection
+		del_id = del_rec["id"]
+		#delete database entry
+		sql='DELETE FROM event_natal WHERE id='+str(del_id)
+		app.db.pquery([sql])
+		dprint('Deleted Database Entry: '+del_rec["name"])
+		#dialog.destroy()
+		#self.win_OD.destroy()
+		self.openDatabase(extraDB=None)
+		self.updateUI(first_time=False)
 
-		vbox.append(Gtk.Label(label=_('Are you sure you want to delete')+' '+name+'?'))
-
-		dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT)
-		dialog.add_button(Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT)
-		dialog.set_destroy_with_parent(True)
-		dialog.connect("close", lambda w,e: dialog.destroy())
-		dialog.connect("response",self.openDatabaseDelDo)
-
-		vbox.append(button_box)
-		dialog.set_child(vbox)
-		dialog.present()
-
-	def openDatabaseDelDo(self, widget, response_id):
-		if response_id == Gtk.ResponseType.ACCEPT:
-			#get id from selection
-			del_id = self.ODDlist["id"]
-			#delete database entry
-			sql='DELETE FROM event_natal WHERE id='+str(del_id)
-			app.db.pquery([sql])
-
-			dprint('deleted database entry: '+self.ODDlist["name"])
-
-			widget.destroy()
-			self.win_OD.destroy()
-			self.openDatabase(extraDB=None)
-			self.updateUI()
-		else:
-			widget.destroy()
-			dprint('rejected database deletion')
+	def quickopendb_callback(self, action, parameter):
+		idx = parameter.get_int32()
+		action.set_state(parameter)
+		for entry in self.DB:
+			if entry['id'] == idx:
+				self.updateChartList(None, entry)
+				break
 
 	def nameSearch(self, widget):
-		self.listmodel.clear()
+		self.listmodel.remove_all()
 		self.DB = self.getDatabaseFamous(limit="15",search=self.namesearch.get_text())
-		for i in range(len(self.DB)):
-			h, m, s = app.decHour(float(self.DB[i]["hour"]))
-			dt_utc=datetime.datetime(int(self.DB[i]["year"]),int(self.DB[i]["month"]),int(self.DB[i]["day"]),h,m,s)
-			dt = dt_utc + datetime.timedelta(seconds=float(self.DB[i]["timezone"])*float(3600))
+		for data in self.DB:
+			h,m,s = app.decHour(float(data["hour"]))
+			dt_utc = datetime.datetime(int(data["year"]), int(data["month"]), int(data["day"]), h, m, s)
+			dt = dt_utc + datetime.timedelta(seconds=float(data["timezone"])*float(3600))
 			birth_date = str(dt.year)+'-%(#1)02d-%(#2)02d %(#3)02d:%(#4)02d:%(#5)02d' % {'#1':dt.month,'#2':dt.day,'#3':dt.hour,'#4':dt.minute,'#5':dt.second}
-			self.listmodel.append([self.DB[i]["id"],self.DB[i]["name"],birth_date,self.DB[i]["location"]])
+			event_data = EventData(ident=data["id"],name=data["name"],birth=birth_date,location=data["location"])
+			self.listmodel.append(event_data)
 		return
 
 	def nameSearchReset(self, widget):
-		self.listmodel.clear()
+		self.listmodel.remove_all()
 		self.DB = self.getDatabaseFamous(limit="2000", search=None)
-		for i in range(len(self.DB)):
-			h,m,s = app.decHour(float(self.DB[i]["hour"]))
-			dt_utc=datetime.datetime(int(self.DB[i]["year"]),int(self.DB[i]["month"]),int(self.DB[i]["day"]),h,m,s)
-			dt = dt_utc + datetime.timedelta(seconds=float(self.DB[i]["timezone"])*float(3600))
+		for data in self.DB:
+			h,m,s = app.decHour(float(data["hour"]))
+			dt_utc=datetime.datetime(int(data["year"]),int(data["month"]),int(data["day"]),h,m,s)
+			dt = dt_utc + datetime.timedelta(seconds=float(data["timezone"])*float(3600))
 			birth_date = str(dt.year)+'-%(#1)02d-%(#2)02d %(#3)02d:%(#4)02d:%(#5)02d' % {'#1':dt.month,'#2':dt.day,'#3':dt.hour,'#4':dt.minute,'#5':dt.second}
-			self.listmodel.append([self.DB[i]["id"],self.DB[i]["name"],birth_date,self.DB[i]["location"]])
+			event_data = EventData(ident=data["id"],name=data["name"],birth=birth_date,location=data["location"])
+			self.listmodel.append(event_data)
 		return
 
 	def openDataFamous_callback(self, action, parameter):
@@ -2845,67 +2909,76 @@ class AstroWindow(Gtk.ApplicationWindow):
 			selectstr = "Select for Combine"
 		self.openDatabaseSelect(selectstr, selected)
 
-	def openDatabaseSelect(self, selectstr, type):
+	def openDatabaseSelect(self, selectstr, ctype):
 		self.win_OD = Gtk.Window()
 		self.win_OD.set_title(_('Select Database Entry'))
 		""" >>> set_icon """
 		#self.win_OD.set_icon_from_file(app.cfg.iconWindow)
-		self.win_OD.set_size_request(512, 464)
+		self.win_OD.set_size_request(480, 480)
 		#self.win_OD.move(150,150)
 		#self.win_OD.connect("delete_event", lambda w,e: self.openDatabaseSelectReject())
-		#define listmodel		
-		self.listmodel = Gtk.ListStore(int,str,str,str)	
-		self.win_OD_treeview = Gtk.TreeView(model=self.listmodel)
-		#selection
-		self.win_OD_selection = self.win_OD_treeview.get_selection()
-		self.win_OD_selection.set_mode(Gtk.SelectionMode.SINGLE)
-		#treeview columns		
-		self.win_OD_tvcolumn0 = Gtk.TreeViewColumn(_('Id'))
-		self.win_OD_tvcolumn1 = Gtk.TreeViewColumn(_('Name'))
-		self.win_OD_tvcolumn2 = Gtk.TreeViewColumn(_('Birth Date (Local)'))
-		self.win_OD_tvcolumn3 = Gtk.TreeViewColumn(_('Location'))
-		#add data from event_natal table
-		self.DB = app.db.getDatabase()
-		for i in range(len(self.DB)):
-			h,m,s = app.decHour(float(self.DB[i]["hour"]))
-			dt_utc=datetime.datetime(int(self.DB[i]["year"]),int(self.DB[i]["month"]),int(self.DB[i]["day"]),h,m,s)
-			dt = dt_utc + datetime.timedelta(seconds=float(self.DB[i]["timezone"])*float(3600))
-			birth_date = str(dt.year)+'-%(#1)02d-%(#2)02d %(#3)02d:%(#4)02d:%(#5)02d' % {'#1':dt.month,'#2':dt.day,'#3':dt.hour,'#4':dt.minute,'#5':dt.second}			
-			self.listmodel.append([self.DB[i]["id"],self.DB[i]["name"],birth_date,self.DB[i]["location"]])
-		#add columns to treeview
-		self.win_OD_treeview.append_column(self.win_OD_tvcolumn0)
-		self.win_OD_treeview.append_column(self.win_OD_tvcolumn1)
-		self.win_OD_treeview.append_column(self.win_OD_tvcolumn2)
-		self.win_OD_treeview.append_column(self.win_OD_tvcolumn3)
-		#cell renderers
-		cell0 = Gtk.CellRendererText()
-		cell1 = Gtk.CellRendererText()
-		cell2 = Gtk.CellRendererText()
-		cell3 = Gtk.CellRendererText()
-		#add cells to columns
-		self.win_OD_tvcolumn0.pack_start(cell0, True)
-		self.win_OD_tvcolumn1.pack_start(cell1, True)
-		self.win_OD_tvcolumn2.pack_start(cell2, True)
-		self.win_OD_tvcolumn3.pack_start(cell3, True)
-		# set the cell attributes to the listmodel column
-		self.win_OD_tvcolumn0.set_attributes(cell0, text = 0)
-		self.win_OD_tvcolumn1.set_attributes(cell1, text = 1)
-		self.win_OD_tvcolumn2.set_attributes(cell2, text = 2)
-		self.win_OD_tvcolumn3.set_attributes(cell3, text = 3)
-		#set treeview options
-		self.win_OD_treeview.set_search_column(1)
-		self.win_OD_tvcolumn0.set_sort_column_id(0)
-		self.win_OD_tvcolumn1.set_sort_column_id(1)
-		self.win_OD_tvcolumn2.set_sort_column_id(2)
-		self.win_OD_tvcolumn3.set_sort_column_id(3)
-		#add treeview to scrolledwindow
-		scrolledwindow = Gtk.ScrolledWindow()
-		scrolledwindow.set_child(self.win_OD_treeview)
-		scrolledwindow.set_vexpand(True)
-		#scrolledwindow.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.ALWAYS)
 		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		vbox.set_vexpand(True)
-		vbox.append(scrolledwindow)
+		#define listmodel	
+		self.win_OD.selection = Gtk.SingleSelection()
+		self.listmodel = Gio.ListStore.new(EventData)
+		self.win_OD.selection.set_model(self.listmodel)
+		#add data from event_natal table
+		self.DB = app.db.getDatabase()
+		for data in self.DB:
+			h,m,s = app.decHour(float(data["hour"]))
+			dt_utc=datetime.datetime(int(data["year"]),int(data["month"]),int(data["day"]),h,m,s)
+			dt = dt_utc + datetime.timedelta(seconds=float(data["timezone"])*float(3600))
+			birth_date = str(dt.year)+'-%(#1)02d-%(#2)02d %(#3)02d:%(#4)02d:%(#5)02d' % {'#1':dt.month,'#2':dt.day,'#3':dt.hour,'#4':dt.minute,'#5':dt.second}
+			event_data = EventData(str(data["id"]),data["name"],birth_date,data["location"])
+			self.listmodel.append(event_data)
+		#add columnview to scrolledwindow
+		scrolled_window = Gtk.ScrolledWindow()
+		scrolled_window.set_vexpand(True)
+
+		column_view = Gtk.ColumnView()
+		column_view.props.show_row_separators = False
+		column_view.props.show_column_separators = True
+
+		id_col = Gtk.ColumnViewColumn.new("Id")
+		id_col.set_resizable(True)
+		#id_col.set_fixed_width(112)
+		id_factory = Gtk.SignalListItemFactory()
+		id_factory.connect("setup", setup)
+		id_factory.connect("bind", bind_ident)
+		id_col.set_factory(id_factory)
+		column_view.append_column(id_col)
+
+		name_col = Gtk.ColumnViewColumn.new("Name")
+		name_col.set_resizable(True)
+		#name_col.set_fixed_width(112)
+		name_factory = Gtk.SignalListItemFactory()
+		name_factory.connect("setup", setup)
+		name_factory.connect("bind", bind_name)
+		name_col.set_factory(name_factory)
+		column_view.append_column(name_col)
+
+		birth_col = Gtk.ColumnViewColumn.new("Birth Date")
+		birth_col.set_resizable(True)
+		#birth_col.set_fixed_width(112)
+		birth_factory = Gtk.SignalListItemFactory()
+		birth_factory.connect("setup", setup)
+		birth_factory.connect("bind", bind_birth)
+		birth_col.set_factory(birth_factory)
+		column_view.append_column(birth_col)
+
+		location_col = Gtk.ColumnViewColumn.new("Location")
+		location_col.set_resizable(True)
+		#location_col.set_fixed_width(112)
+		location_factory = Gtk.SignalListItemFactory()
+		location_factory.connect("setup", setup)
+		location_factory.connect("bind", bind_location)
+		location_col.set_factory(location_factory)
+		column_view.append_column(location_col)
+		column_view.set_model(self.win_OD.selection)
+
+		scrolled_window.set_child(column_view)
+		vbox.append(scrolled_window)
 
 		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		button_box.set_homogeneous(True)
@@ -2914,67 +2987,64 @@ class AstroWindow(Gtk.ApplicationWindow):
 		button.connect("clicked", lambda w: self.openDatabaseSelectReject())
 		button_box.append(button)	
 		button = Gtk.Button.new_with_mnemonic(label=selectstr)
-		button.connect("clicked", lambda w: self.openDatabaseSelectReturn(type))
+		button.connect("clicked", lambda w: self.openDatabaseSelectReturn(ctype))
 		button_box.prepend(button)		
 		#display window
 		vbox.append(button_box)
 		self.win_OD.set_child(vbox)
-		self.win_OD_treeview.set_model(model=self.listmodel)
+		#self.win_OD_treeview.set_model(model=self.listmodel)
 		self.win_OD.present()
 
 	def openDatabaseSelectReject(self):
 		self.win_OD.destroy()
 		return
 
-	def openDatabaseSelectReturn(self, type):
-		model = self.win_OD_selection.get_selected()[0]
-		iter = self.win_OD_selection.get_selected()[1]
-		for i in range(len(self.DB)):
-			if self.DB[i]["id"] == model.get_value(iter,0):
-				list = self.DB[i]
+	def openDatabaseSelectReturn(self, ctype):
+		active = self.win_OD.selection.get_selected()
+		data_record = self.DB[active]
 		#synastry
-		if type == "Synastry":
+		if ctype == "Synastry":
 			app.type="Transit"
-			app.t_name=str(list["name"])
-			app.t_year=int(list["year"])
-			app.t_month=int(list["month"])
-			app.t_day=int(list["day"])
-			app.t_hour=float(list["hour"])
-			app.t_geolon=float(list["geolon"])
-			app.t_geolat=float(list["geolat"])
-			app.t_altitude=int(list["altitude"])
-			app.t_location=str(list["location"])
-			app.t_timezone=float(list["timezone"])
+			app.t_name=str(data_record["name"])
+			app.t_year=int(data_record["year"])
+			app.t_month=int(data_record["month"])
+			app.t_day=int(data_record["day"])
+			app.t_hour=float(data_record["hour"])
+			app.t_geolon=float(data_record["geolon"])
+			app.t_geolat=float(data_record["geolat"])
+			app.t_altitude=int(data_record["altitude"])
+			app.t_location=str(data_record["location"])
+			app.t_timezone=float(data_record["timezone"])
 			app.charttype="%s (%s)" % (app.label["synastry"],app.t_name)
 			app.transit=True
-			chart_name = app.makeSVG()
-		elif type == "Composite":
+			#chart_name = app.makeSVG()
+		elif ctype == "Composite":
 			app.type="Composite"
-			app.t_name=str(list["name"])
-			app.t_year=int(list["year"])
-			app.t_month=int(list["month"])
-			app.t_day=int(list["day"])
-			app.t_hour=float(list["hour"])
-			app.t_geolon=float(list["geolon"])
-			app.t_geolat=float(list["geolat"])
-			app.t_altitude=int(list["altitude"])
-			app.t_location=str(list["location"])
-			app.t_timezone=float(list["timezone"])
+			app.t_name=str(data_record["name"])
+			app.t_year=int(data_record["year"])
+			app.t_month=int(data_record["month"])
+			app.t_day=int(data_record["day"])
+			app.t_hour=float(data_record["hour"])
+			app.t_geolon=float(data_record["geolon"])
+			app.t_geolat=float(data_record["geolat"])
+			app.t_altitude=int(data_record["altitude"])
+			app.t_location=str(data_record["location"])
+			app.t_timezone=float(data_record["timezone"])
 			app.charttype="%s (%s)" % (app.label["composite"],app.t_name)
 			app.transit=False
-			chart_name = app.makeSVG()
-		elif type == "Combine":
+			#chart_name = app.makeSVG()
+		elif ctype == "Combine":
 			app.type="Combine"
-			app.t_name=str(list["name"])
-			app.t_year=int(list["year"])
-			app.t_month=int(list["month"])
-			app.t_day=int(list["day"])
-			app.t_hour=float(list["hour"])
-			app.t_geolon=float(list["geolon"])
-			app.t_geolat=float(list["geolat"])
-			app.t_altitude=int(list["altitude"])
-			app.t_location=str(list["location"])
-			app.t_timezone=float(list["timezone"])
+			app.t_name=str(data_record["name"])
+			app.t_year=int(data_record["year"])
+			app.t_month=int(data_record["month"])
+			app.t_day=int(data_record["day"])
+			app.t_hour=float(data_record["hour"])
+			app.t_geolon=float(data_record["geolon"])
+			app.t_geolat=float(data_record["geolat"])
+			app.t_altitude=int(data_record["altitude"])
+			app.t_location=str(data_record["location"])
+			app.t_timezone=float(data_record["timezone"])
 			#calculate combine between both utc times
 			h,m,s = app.decHour(app.hour)
 			dt1 = datetime.datetime(app.year,app.month,app.day,h,m,s)
@@ -2996,8 +3066,8 @@ class AstroWindow(Gtk.ApplicationWindow):
 			app.c_month = combine.month
 			app.c_day = combine.day
 			app.c_hour = app.decHourJoin(combine.hour,combine.minute,combine.second)
-			app.charttype="%s (%s)" % (app.label["combine"],app.t_name)
-			app.transit=False
+			app.charttype = "%s (%s)" % (app.label["combine"],app.t_name)
+			app.transit = False
 			#set new date for printing in svg
 			app.year = app.c_year
 			app.month = app.c_month
@@ -3011,22 +3081,17 @@ class AstroWindow(Gtk.ApplicationWindow):
 			dt = pytz.timezone(app.timezone_str).localize(dt_input)
 			app.timezone=app.offsetToTz(dt.utcoffset())
 			app.utcToLocal()
-			chart_name = app.makeSVG()
+		chart_name = app.makeSVG()
 		self.image.setupSVG(chart_name)
 		self.image.queue_resize()
 		self.win_OD.close()		
 
-	"""
-	 Menu items for general configuration
-	  settingsConfiguration
-	  settingsConfigurationSubmit
-	"""
 	def setConfiguration_callback(self, action, parameter):
 		# create a new window
-		self.win_SC = Gtk.Window(parent=self)
+		self.win_SC = Gtk.Window(title=_("General Configuration"))
 		""" >>> set_icon changed in GTK4 """
 
-		self.win_SC.set_title(_("General Configuration"))
+		#self.win_SC.set_title(_("General Configuration"))
 		#self.win_SC.connect("delete_event", lambda w,e: self.win_SC.destroy())
 		#self.win_SC.move(200,150)
 		#self.win_SC.set_border_width(5)
@@ -3034,7 +3099,11 @@ class AstroWindow(Gtk.ApplicationWindow):
 		#data dictionary
 		data = {}
 		#create a VBox
-		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, vexpand=True)
+		vbox.props.margin_start = 32
+		vbox.props.margin_end = 16
+		vbox.props.margin_top = 16
+		vbox.props.margin_bottom = 16
 		#create a grid with 8 rows and 1 column
 		grid = Gtk.Grid()
 		grid.set_column_spacing(8)
@@ -3051,11 +3120,15 @@ class AstroWindow(Gtk.ApplicationWindow):
 		grid.attach(hbox, 0, 0, 1, 1)
 		if app.db.getAstrocfg('use_geonames.org') == "1":
 			data['use_geonames.org'].set_active(True)
+		"""
+		 replace ComboBox by DrowDown
+		 https://pygobject.gnome.org/tutorials/gtk4/controls/dropdownhtml
+		"""
 		# house system
-		data['houses_system'] = Gtk.ComboBoxText.new()
+		data['houses_system'] = Gtk.DropDown.new()
 		grid.attach(Gtk.Label(label=_('Houses System')), 0, 1, 1, 1)
 		grid.attach(data['houses_system'], 0, 2, 1, 1)
-		hsys={
+		house_systems = {
 			"P":"Placidus",
 			"K":"Koch",
 			"O":"Porphyrius",
@@ -3071,15 +3144,19 @@ class AstroWindow(Gtk.ApplicationWindow):
 			"G":"Gauquelin sectors",
 			"M":"Morinus"
 		}
-		self.houses_list=["P","K","O","R","C","A","V","W","X","H","T","B","G","M"]
-		active=0
-		for n in range(len(self.houses_list)):
-			data['houses_system'].append_text(hsys[self.houses_list[n]])
-			if app.db.astrocfg['houses_system'] == self.houses_list[n]:
-				active = n
-		data['houses_system'].set_active(active)
+		active = 0
+		self.houses_list = []
+		systems = Gtk.StringList()
+		for i, key in enumerate(house_systems.keys()):
+			self.houses_list.append(key)
+			systems.append(house_systems[key])
+			if app.db.astrocfg['houses_system'] == key:
+				active = i
+		data['houses_system'].set_model(model=systems)
+		data['houses_system'].set_selected(active)
+
 		#position calculation (geo,truegeo,topo,helio)
-		data['postype'] = Gtk.ComboBoxText.new()
+		data['postype'] = Gtk.DropDown.new()
 		grid.attach(Gtk.Label(label=_('Position Calculation')), 0, 3, 1, 1)
 		grid.attach(data['postype'], 0, 4, 1, 1)
 		postype={
@@ -3089,51 +3166,64 @@ class AstroWindow(Gtk.ApplicationWindow):
 			"helio":app.label["heliocentric"]
 		}
 		self.postype_list=["geo","truegeo","topo","helio"]
+		postypes = Gtk.StringList()
 		active = 0
-		for n in range(len(self.postype_list)):
-			data['postype'].append_text(postype[self.postype_list[n]])
-			if app.db.astrocfg['postype'] == self.postype_list[n]:
-				active = n
-		data['postype'].set_active(active)
+		for i, key in enumerate(postype.keys()):
+			postypes.append(postype[key])
+			if app.db.astrocfg['postype'] == key:
+				active = i
+		data['postype'].set_model(model=postypes)
+		data['postype'].set_selected(active)
+
 		#chart view (traditional,european)
-		data['chartview'] = Gtk.ComboBoxText.new()
+		data['chartview'] = Gtk.DropDown.new()
 		grid.attach(Gtk.Label(label=_('Chart View')), 0, 5, 1, 1)
 		grid.attach(data['chartview'], 0, 6, 1, 1)
 		chartview={
 			"traditional":_("Planets in Zodiac"),
 			"european":_("Planets around Zodiac")
 		}
-		self.chartview_list=["traditional","european"]
-		active=0
-		for n in range(len(self.chartview_list)):
-			data['chartview'].append_text(chartview[self.chartview_list[n]])
-			if app.db.astrocfg['chartview'] == self.chartview_list[n]:
-				active = n
-		data['chartview'].set_active(active)
+		self.chartview_list = ["traditional","european"]
+		chartviews = Gtk.StringList()
+		active = 0
+		for i, key in enumerate(chartview.keys()):
+			chartviews.append(chartview[key])
+			if app.db.astrocfg['chartview'] == key:
+				active = i
+		data['chartview'].set_model(model=chartviews)
+		data['chartview'].set_selected(active)
+
 		#zodiac type (tropical, sidereal)
-		data['zodiactype'] = Gtk.ComboBoxText.new()
+		data['zodiactype'] = Gtk.DropDown.new()
 		grid.attach(Gtk.Label(label=_('Zodiac Type')), 0, 7, 1, 1)
 		grid.attach(data['zodiactype'], 0, 8, 1, 1)
-		chartview={"tropical":_("Tropical"), "sidereal":_("Sidereal")}
+		zodiactype = {"tropical":_("Tropical"), "sidereal":_("Sidereal")}
 		self.zodiactype_list=["tropical","sidereal"]
+		zodiactypes = Gtk.StringList()
 		active = 0
-		for n in range(len(self.zodiactype_list)):
-			data['zodiactype'].append_text(chartview[self.zodiactype_list[n]])
-			if app.db.astrocfg['zodiactype'] == self.zodiactype_list[n]:
-				active = n
-		data['zodiactype'].set_active(active)
+		for i, key in enumerate(zodiactype.keys()):
+			zodiactypes.append(zodiactype[key])
+			if app.db.astrocfg['zodiactype'] == key:
+				active = i
+		data['zodiactype'].set_model(model=zodiactypes)
+		data['zodiactype'].set_selected(active)
+
 		#sidereal mode
-		data['siderealmode'] = Gtk.ComboBoxText.new()
+		data['siderealmode'] = Gtk.DropDown.new()
 		if app.db.astrocfg['zodiactype'] != 'sidereal':
 			data['siderealmode'].set_sensitive(False)
 
-		def zodiactype_changed(button):
-			if self.zodiactype_list[data['zodiactype'].get_active()] != 'sidereal':
-				data['siderealmode'].set_sensitive(False)
-			else:
-				data['siderealmode'].set_sensitive(True)
+		def zodiactype_changed(dropdown, _pspec):
+			# Selected Gtk.StringObject
+			selected = dropdown.get_selected()
+			if selected is not None:
+				type_string = self.zodiactype_list[selected]
+				if type_string != 'sidereal':
+					data['siderealmode'].set_sensitive(False)
+				else:
+					data['siderealmode'].set_sensitive(True)
 
-		data['zodiactype'].connect("changed",zodiactype_changed)
+		data['zodiactype'].connect("notify::selected-item", zodiactype_changed)
 		grid.attach(Gtk.Label(label=_('Sidereal Mode')), 0, 9, 1, 1)
 		grid.attach(data['siderealmode'], 0, 10, 1, 1)
 		self.siderealmode_chartview={
@@ -3158,7 +3248,8 @@ class AstroWindow(Gtk.ApplicationWindow):
 				"J1900":_("J1900"),
 				"B1950":_("B1950")
 				}
-		self.siderealmode_list=["FAGAN_BRADLEY",
+		self.siderealmode_list = [
+				"FAGAN_BRADLEY",
 				"LAHIRI",
 				"DELUCE",
 				"RAMAN",
@@ -3178,23 +3269,27 @@ class AstroWindow(Gtk.ApplicationWindow):
 				"J2000",
 				"J1900",
 				"B1950"]
-		active=0
-		for n in range(len(self.siderealmode_list)):
-			data['siderealmode'].append_text(self.siderealmode_chartview[self.siderealmode_list[n]])
-			if app.db.astrocfg['siderealmode'] == self.siderealmode_list[n]:
-				active = n
-		data['siderealmode'].set_active(active)
+		sideralmodes = Gtk.StringList()
+		active = 0
+		for i, key in enumerate(self.siderealmode_chartview.keys()):
+			sideralmodes.append(self.siderealmode_chartview[key])
+			if app.db.astrocfg['siderealmode'] == key:
+				active = i
+		data['siderealmode'].set_model(model=sideralmodes)
+		data['siderealmode'].set_selected(active)
 		#language
-		data['language'] = Gtk.ComboBoxText.new()
 		grid.attach(Gtk.Label(label=_('Language')), 0, 11, 1, 1)
+		data['language'] = Gtk.DropDown.new()
 		grid.attach(data['language'], 0, 12, 1, 1)
-		data['language'].append_text(_("Default"))
-		active=0
-		for i in range(len(LANGUAGES)):
-			data['language'].append_text(app.db.lang_label[LANGUAGES[i]])
-			if app.db.astrocfg['language'] == LANGUAGES[i]:
+		languages = Gtk.StringList()
+		languages.append(_("Default"))
+		active = 0
+		for i, language in enumerate(LANGUAGES):
+			languages.append(app.db.lang_label[language])
+			if app.db.astrocfg['language'] == language:
 				active = i+1
-		data['language'].set_active(active)
+		data['language'].set_model(model=languages)
+		data['language'].set_selected(active)
 		#make the ui layout with ok button
 		scrolled_window = Gtk.ScrolledWindow()
 		scrolled_window.set_vexpand(True)
@@ -3226,28 +3321,41 @@ class AstroWindow(Gtk.ApplicationWindow):
 		else:
 			app.db.setAstrocfg("use_geonames.org","0")
 		# houses system
-		if self.houses_list[data['houses_system'].get_active()] != app.db.astrocfg['houses_system']:
+		model = data['houses_system'].get_model()
+		active = data['houses_system'].get_selected()
+		dprint('House system choosen: '+model.get_string(active))
+		if self.houses_list[active] != app.db.astrocfg['houses_system']:
 			update = True
-		app.db.setAstrocfg("houses_system",self.houses_list[data['houses_system'].get_active()])
+			app.db.setAstrocfg("houses_system",self.houses_list[active])
 		# position calculation
-		if self.postype_list[data['postype'].get_active()] != app.db.astrocfg['postype']:
+		model = data['postype'].get_model()
+		active = data['postype'].get_selected()
+		dprint('Position Type choosen: '+model.get_string(active))
+		if self.postype_list[active] != app.db.astrocfg['postype']:
 			update = True
-		app.db.setAstrocfg("postype",self.postype_list[data['postype'].get_active()])
+			app.db.setAstrocfg("postype",self.postype_list[active])
 		#chart view
-		if self.chartview_list[data['chartview'].get_active()] != app.db.astrocfg['chartview']:
+		model = data['chartview'].get_model()
+		active = data['chartview'].get_selected()
+		dprint('Chart View choosen: '+model.get_string(active))
+		if self.chartview_list[active] != app.db.astrocfg['chartview']:
 			update = True
-		app.db.setAstrocfg("chartview",self.chartview_list[data['chartview'].get_active()])
+			app.db.setAstrocfg("chartview",self.chartview_list[active])
 		#zodiac type
-		if self.zodiactype_list[data['zodiactype'].get_active()] != app.db.astrocfg['zodiactype']:
+		model = data['zodiactype'].get_model()
+		active = data['zodiactype'].get_selected()
+		if self.zodiactype_list[active] != app.db.astrocfg['zodiactype']:
 			update = True
-		app.db.setAstrocfg("zodiactype",self.zodiactype_list[data['zodiactype'].get_active()])
+			app.db.setAstrocfg("zodiactype",self.zodiactype_list[active])
 		#sidereal mode
-		if self.siderealmode_list[data['siderealmode'].get_active()] != app.db.astrocfg['siderealmode']:
+		model = data['siderealmode'].get_model()
+		active = data['siderealmode'].get_selected()
+		if self.siderealmode_list[active] != app.db.astrocfg['siderealmode']:
 			update = True
-		app.db.setAstrocfg("siderealmode",self.siderealmode_list[data['siderealmode'].get_active()])
+			app.db.setAstrocfg("siderealmode",self.siderealmode_list[active])
 		#language
 		model = data['language'].get_model()
-		active = data['language'].get_active()
+		active = data['language'].get_selected()
 		if active == 0:
 			active_lang = "default"
 		else:
@@ -3255,10 +3363,9 @@ class AstroWindow(Gtk.ApplicationWindow):
 		if active_lang != app.db.astrocfg['language']:
 			update = True
 		app.db.setAstrocfg("language",active_lang)
-
 		# set language to be used
 		app.db.setLanguage(active_lang)
-		self.updateUI()
+		self.updateUI(first_time=False)
 		# updatechart
 		if update:
 			self.updateChart()
@@ -3277,36 +3384,40 @@ class AstroWindow(Gtk.ApplicationWindow):
 		# check connection to the internet
 		self.checkInternetConnection()
 		# create a new window
-		self.win_SL = Gtk.Window()
+		self.win_SL = Gtk.Window(title=_("Please Set Your Home Location"), modal=True)
 		""" >>> set_icon changed in GTK4 """
 
-		self.win_SL.set_title(_("Please Set Your Home Location"))
-		""" >>> settingsLocationDestroy changed in GTK4 """
-		#self.win_SL.connect("delete_event", lambda w,e: self.settingsLocationDestroy())
+		self.win_SL.connect('destroy', self.settingsLocationDestroy, self.win_SL)
 		#self.win_SL.move(150,150)
 		#self.win_SL.set_border_width(10)
+		self.win_SL.set_default_size(-1,144)
+		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
+		vbox.props.margin_start = 16
+		vbox.props.margin_end = 16
+		vbox.props.margin_top = 16
+		vbox.props.margin_bottom = 16
 		# create a grid, method 'attach', left, top, width, height
 		grid = Gtk.Grid()
-		grid.set_column_spacing(15)
-		grid.set_row_spacing(15)
-		self.win_SL.set_child(grid)
+		grid.set_column_spacing(16)
+		grid.set_row_spacing(16)
 		# display of location (non editable)
 		location = Gtk.Label(label=_('Location')+':')
 		grid.attach(location, 0, 1, 1, 1)
 		self.LLoc = Gtk.Label(label=app.home_location)
-		grid.attach_next_to(Gtk.Label(label=app.home_location), location, Gtk.PositionType.RIGHT, 1, 1)
+		#self.LLoc = Gtk.Label(label='XXXXXXXXX')
+		grid.attach_next_to(child=self.LLoc, sibling=location, side=Gtk.PositionType.RIGHT, width=1, height=1)
 		latitude = Gtk.Label(label=_('Latitude')+':')
 		grid.attach(latitude, 0, 2, 1, 1)
 		self.LLat = Gtk.Label(label=app.home_geolat)
-		grid.attach_next_to(Gtk.Label(label=app.home_geolat), latitude, Gtk.PositionType.RIGHT, 1, 1)
+		grid.attach_next_to(child=self.LLat, sibling=latitude, side=Gtk.PositionType.RIGHT, width=1, height=1)
 		longitude = Gtk.Label(label=_('Longitude')+':')
 		grid.attach(longitude, 0, 3, 1, 1)
 		self.LLon = Gtk.Label(label=app.home_geolon)
-		grid.attach_next_to(Gtk.Label(label=app.home_geolon), longitude, Gtk.PositionType.RIGHT, 1, 1)
+		grid.attach_next_to(child=self.LLon, sibling=longitude, side=Gtk.PositionType.RIGHT, width=1, height=1)
 		# use geocoders if we have an internet connection else geonames database
 		if self.iconn:
 			# entry for location (edigrid)
-			hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+			hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
 			label = Gtk.Label(label=_("City")+": ")
 			hbox.append(label)
 			self.geoLoc = Gtk.Entry()
@@ -3323,81 +3434,71 @@ class AstroWindow(Gtk.ApplicationWindow):
 			hbox.append(self.geoCC)
 			grid.attach(hbox, 0, 0, 2, 1)
 		else:
-			hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-			grid.attach(hbox, 0, 0, 2, 1)
+			#grid.attach(hbox, 0, 0, 2, 1)
 			# get nearest home
 			self.GEON_nearest = app.db.gnearest(app.geolat,app.geolon)
 			# continents
-			self.contbox = Gtk.ComboBox()
+			self.continents = Gtk.DropDown()
 			self.contstore = Gtk.ListStore(str,str)
-			cell = Gtk.CellRendererText()
-			self.contbox.pack_start(cell, False)
-			self.contbox.add_attribute(cell, 'text', 0)
-			hbox.append(self.contbox)
-			#self.contbox.set_wrap_width(1)
+			grid.attach(self.continents, 0, 0, 1, 1)
+			#self.continents.set_wrap_width(1)
 			sql = 'SELECT * FROM continent ORDER BY name ASC'
 			app.db.gquery(sql)
-			continentinfo=[]
-			i = 0
+			continent_info = Gtk.StringList()
+			self.continent_infos = []
 			activecont = 3
-			for row in app.db.gcursor:
+			for i, row in enumerate(app.db.gcursor):
 				if row['code'] == self.GEON_nearest['continent']:
 					activecont = i
 					self.GEON_nearest['continent'] = None
 				self.contstore.append([row['name'],row['code']])
-				i += 1
+				items = [row['name'],row['code']]
+				self.continent_infos.append(items)
+				continent_info.append(row['name'])
 			app.db.gclose()
-			self.contbox.set_model(self.contstore)
+			self.continents.set_model(continent_info)
 			# countries
-			self.countrybox = Gtk.ComboBox()
-			cell = Gtk.CellRendererText()
-			self.countrybox.pack_start(cell, False)
-			self.countrybox.add_attribute(cell, 'text', 0)
-			hbox.append(self.countrybox)
-			#self.countrybox.set_wrap_width(1) 
-			self.countrybox.connect('changed', self.eventDataChangedCountrybox)
+			self.countries = Gtk.DropDown.new()
+			grid.attach(self.countries, 1, 0, 1, 1)
+			#self.countries.set_wrap_width(1) 
+			self.countries.connect('notify::selected-item', self.eventDataChangedCountrybox)
 			# provinces
-			self.provbox = Gtk.ComboBox()
-			cell = Gtk.CellRendererText()
-			self.provbox.pack_start(cell, False)
-			self.provbox.add_attribute(cell, 'text', 0)
-			hbox.append(self.provbox)
-			#self.provbox.set_wrap_width(1) 
-			self.provbox.connect('changed', self.eventDataChangedProvbox)
+			self.provinces = Gtk.DropDown()
+			grid.attach(self.provinces, 2, 0, 1, 1)
+			#self.provinces.set_wrap_width(1) 
+			self.provinces.connect('notify::selected-item', self.eventDataChangedProvbox)
 			# cities
-			self.citybox = Gtk.ComboBox()
-			cell = Gtk.CellRendererText()
-			self.citybox.pack_start(cell, False)
-			self.citybox.add_attribute(cell, 'text', 0)
-			hbox.append(self.citybox)
-			#self.citybox.set_wrap_width(2) 
-			self.citybox.connect('changed', self.eventDataChangedCitybox)
-			self.contbox.connect('changed', self.eventDataChangedContbox)
-			self.contbox.set_active(activecont)
+			self.cities = Gtk.DropDown()
+			grid.attach(self.cities, 3, 0, 1, 1)
+			#self.cities.set_wrap_width(2) 
+			self.cities.connect('notify::selected-item', self.eventDataChangedCitybox)
+			self.continents.connect('notify::selected-item', self.eventDataChangedContbox)
+			self.continents.set_selected(activecont)
 		# buttonbox
-		buttonbox = Gtk.Box(homogeneous=False, spacing=5)
-		grid.attach(buttonbox, 0, 4, 2, 1)
+		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		button_box.set_homogeneous(True)
    		# ok button
 		button = Gtk.Button.new_with_mnemonic(label="OK")
 		button.connect("clicked", self.settingsLocationSubmit)
-		#button.set_can_default(True)
-		buttonbox.append(button)
-		#button.grab_default()
+		button_box.append(button)
 		# Apply button
 		button = Gtk.Button.new_with_mnemonic(label=_('Apply'))
 		button.connect("clicked", self.settingsLocationApply)
-		buttonbox.append(button)
+		button_box.append(button)
 		# Cancel button
 		button = Gtk.Button.new_with_mnemonic(label=_("Cancel"))
-		button.connect("clicked", lambda w: self.settingsLocationDestroy())
-		buttonbox.append(button)
+		button.connect("clicked", self.settingsLocationDestroy)
+		button_box.append(button)
+		grid.attach(button_box, 0, 4, 4, 1)
+		vbox.append(grid)
+		self.win_SL.set_child(vbox)
 		# show all
 		self.win_SL.present()
 
 	def settingsLocationSubmit(self, widget):
 		self.settingsLocationApply(widget)
 		if self.geoLocFound:
-			self.settingsLocationDestroy()
+			self.settingsLocationDestroy(widget)
 			return
 		else:
 			return
@@ -3409,20 +3510,20 @@ class AstroWindow(Gtk.ApplicationWindow):
 			result = geoname.search(self.geoLoc.get_text(),self.geoCC.get_text())
 			if result:
 				self.geoLocFound = True
-				lat=float(result[0]['lat'])
-				lon=float(result[0]['lng'])
-				tzstr=result[0]['timezonestr']
-				cc=result[0]['countryCode']
+				lat = float(result[0]['lat'])
+				lon = float(result[0]['lng'])
+				tzstr = result[0]['timezonestr']
+				cc = result[0]['countryCode']
 				loc='%s, %s' % (result[0]['name'],result[0]['countryName'])
-				dprint('settingsLocationApply: %s found; %s %s %s' % (self.geoLoc.get_text(), lat,lon,loc))
+				dprint('settingsLocationApply: %s found; %s %s %s' % (self.geoLoc.get_text(),lat,lon,loc))
 			else:
 				self.geoLocFound = False
 				#revert to defaults
-				lat=app.geolat
-				lon=app.geolon
-				loc=app.location
-				cc=app.countrycode
-				tzstr=app.timezonestr
+				lat = app.geolat
+				lon = app.geolon
+				loc = app.location
+				cc = app.countrycode
+				tzstr = app.timezonestr
 				dprint('settingsLocationApply: %s not found, reverting to defaults' % self.geoLoc.get_text() )
 				self.geoLoc.set_text('City Not Found, Try Again!')
 				return
@@ -3434,19 +3535,19 @@ class AstroWindow(Gtk.ApplicationWindow):
 			tzstr = self.GEON_tzstr
 		# apply settings to database
 		app.db.setSettingsLocation(lat, lon, loc, cc, tzstr)
-		app.home_location=loc
-		app.home_geolat=lat
-		app.home_geolon=lon
-		app.home_countrycode=cc
-		app.home_timezonestr=tzstr
+		app.home_location = loc
+		app.home_geolat = lat
+		app.home_geolon = lon
+		app.home_countrycode = cc
+		app.home_timezonestr = tzstr
 		app.location=loc
-		app.timezonestr=tzstr
-		app.geolat=lat
-		app.geolon=lon
-		app.countrycode=cc
-		app.transit=False
-		app.name=_("Here and Now")
-		app.type="Radix"
+		app.timezonestr = tzstr
+		app.geolat = lat
+		app.geolon = lon
+		app.countrycode = cc
+		app.transit = False
+		app.name = _("Here and Now")
+		app.type = "Radix"
 		self.LLat.set_text(str(lat))
 		self.LLon.set_text(str(lon))
 		self.LLoc.set_text(str(loc))
@@ -3455,14 +3556,14 @@ class AstroWindow(Gtk.ApplicationWindow):
 		dt_input = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute, now.second)
 		dt = pytz.timezone(app.timezonestr).localize(dt_input)
 		dt_utc = dt.replace(tzinfo=None) - dt.utcoffset()
-		app.name=_("Here and Now")
+		app.name = _("Here and Now")
 		app.charttype = app.label["radix"]
 		app.year = dt_utc.year
-		app.month=dt_utc.month
-		app.day=dt_utc.day
+		app.month = dt_utc.month
+		app.day = dt_utc.day
 		app.hour = app.decHourJoin(dt_utc. hour, dt_utc. minute, dt_utc. second)
-		app.timezone=app.offsetToTz(dt.utcoffset())
-		app.altitude=25
+		app.timezone = app.offsetToTz(dt.utcoffset())
+		app.altitude = 25
 		app.utcToLocal()
 		self.updateChart()
 
@@ -3470,7 +3571,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 
 		return
 
-	def settingsLocationDestroy(self):
+	def settingsLocationDestroy(self, widget):
 		self.settingsLocationMode = False
 		self.win_SL.close()
 		return
@@ -3631,15 +3732,11 @@ class AstroWindow(Gtk.ApplicationWindow):
 		button_box.set_vexpand(False)
 		button = Gtk.Button.new_with_mnemonic(label = _("OK"))
 		button.connect("clicked", self.specialSecondaryProgressionSubmit, spinner)
-		#button.set_can_default(True)
 		button_box.prepend(button)
-		#self.win_SSP.action_area.pack_start(button, False, True, 0)
-		#button.grab_default()
 		#cancel button
 		button = Gtk.Button.new_with_mnemonic(label = _("Cancel"))
 		button.connect("clicked", lambda w: self.win_SSP.destroy())
 		button_box.append(button)
-		#self.win_SSP.action_area.pack_start(button, True, True, 0)
 		grid.attach(button_box, 0, 3, 5, 1)
 		self.win_SSP.set_child(grid)
 		self.win_SSP.present()
@@ -3887,7 +3984,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 	"""
 	'Extra' Menu Items Functions
 	  exportdb
-	  importdb'
+	  importdb
 	"""
 	def exportdb_callback(self, action, parameter):
 		gio_filters = Gio.ListStore.new(Gtk.FileFilter)
@@ -4033,9 +4130,12 @@ class AstroApplication(Gtk.Application):
 		if self.window is None:
 			# Windows are associated with the application
 			# when the last one is closed the application shuts down
-			self.window = AstroWindow(application=self, title="AstroChart Window")
-			#self.window.menu = menubar
-		self.window.set_default_size(self.width, self.height)
+			self.window = AstroWindow(
+				application=self,
+				title="AstroChart Window",
+				default_height=self.height,
+				default_width=self.width,
+			)
 		self.window.present()
 
 	def utcToLocal(self):
