@@ -22,14 +22,14 @@ To preserve the great OpenAstro program by Pelle van der Scheer [1] from oblivio
 
 ### Enhancements
 The published version 1.1.59 is the last release authorized by Pelle van der Scheer and dated from roundabout 2021. Somewhat enhanced versions can be found here. Several deprecations were eliminated. The chart window is shown in a scrolling window, which can be maximized. Zoom levels are available in several variants.<br/>
-For switching to GTK4 in near future the UIManager was removed and replaced by Gio and GLib class functions. Besides 'openastro' the new 'astroChartBuilder.py' is now largely completed and presented as replacement.<br/>
+For switching to GTK4 the UIManager has to be removed and replaced by Gio and GLib class functions. Besides 'openastro' the new 'astroChartBuilder.py' is now largely completed and presented as replacement.<br/>
 
-### Migrating from Gtk3 to Gzk4
-The migration from Gtk3 to Gtk4 is pratically completed. This was not trivial, since replacing Treeview with ColumnView and ComboBox with DropDown presented some tricky challenges. The result, however, is quite impressive.
+### Migrating from Gtk3 to Gtk4
+The migration from Gtk3 to Gtk4 is practically completed. This was not trivial, since replacing Treeview with ColumnView and ComboBox with DropDown presented some tricky challenges. The result, however, is quite impressive.
 BUT as formerly said...the original ideas of Pelle remained untouched.
 
 ### Discussion
-This program is written in python with use of pyGtk for the Gnome GTK3 environment of Linux. For simplicity the .py ending of the executable is omitted, so start a standalone version with:
+This program is written in python with use of pyGtk for the Gnome GTK3 and now Gtk4 environment of Linux. For simplicity the .py ending of the executable can be omitted, so start a standalone version with:
 
 ```
 # execute once to make program executable
@@ -43,6 +43,8 @@ chmod +x ./openastro
 ./astroChartShow.py
 # start the new Gtk4 OpenAstro
 ./astroChart.py --local
+# start and cleanup
+./astroChart.py --local --purge
 ```
 The program is localized in 25 languages in folder 'locale'. Localization for the 'AstroChart programs' is incomplete.
 

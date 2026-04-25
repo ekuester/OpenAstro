@@ -24,7 +24,6 @@
 """
 
 MENU_XML = """
-<?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <menu id="MenuBar">
     <submenu>
@@ -37,12 +36,12 @@ MENU_XML = """
       </section>
       <section>
         <item>
+          <attribute name="label" translatable="yes">About</attribute>
           <attribute name="action">win.about</attribute>
-          <attribute name="label" translatable="yes">_About</attribute>
         </item>
         <item>
+          <attribute name="label" translatable="yes">Quit</attribute>
           <attribute name="action">app.quit</attribute>
-          <attribute name="label" translatable="yes">_Quit</attribute>
         </item>
       </section>
     </submenu>
@@ -114,9 +113,9 @@ MENU_XML = """
       <attribute name="label" translatable="yes">Zoom</attribute>
         <section>
           <item>
-            <attribute name="label" translatable="yes">In</attribute>
+            <attribute name="label" translatable="yes">Out</attribute>
             <attribute name="action">win.zoom</attribute>
-            <attribute name="target">zIn</attribute>
+            <attribute name="target">zOut</attribute>
           </item>
           <item>
             <attribute name="label" translatable="yes">80%</attribute>
@@ -140,9 +139,9 @@ MENU_XML = """
             <attribute name="target">z200</attribute>
           </item>
           <item>
-            <attribute name="label" translatable="yes">Out</attribute>
+            <attribute name="label" translatable="yes">In</attribute>
             <attribute name="action">win.zoom</attribute>
-            <attribute name="target">zOut</attribute>
+            <attribute name="target">zIn</attribute>
           </item>
         </section>
     </submenu>
@@ -159,35 +158,16 @@ MENU_XML = """
     </submenu>
     <submenu>
       <attribute name="label" translatable="yes">Help</attribute>
-      <section>
         <item>
           <attribute name="label" translatable="yes">About</attribute>
           <attribute name="action">win.about</attribute>
         </item>
-      </section>
     </submenu>
-  </menu>
-  <menu id="AppMenu">
-    <section>
-      <item>
-        <attribute name="label" translatable="yes">New</attribute>
-        <attribute name="action">app.new</attribute>
-      </item>
-      <item>
-        <attribute name="action">win.maximize</attribute>
-        <attribute name="label" translatable="yes">Maximize</attribute>
-      </item>
-      <item>
-        <attribute name="label" translatable="yes">Quit</attribute>
-        <attribute name="action">app.quit</attribute>
-      </item>
-    </section>
   </menu>
 </interface>
 """
 
 CHART_XML = """
-<?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <menu id="ChartUI">
     <section>
@@ -265,7 +245,6 @@ CHART_XML = """
 """
 
 EVENT_XML = """
-<?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <menu id="EventUI">
     <section>
@@ -314,6 +293,9 @@ import math, sys, os.path, datetime, socket, gettext, codecs, webbrowser, pytz
 #copyfile
 from shutil import copyfile
 
+#ElementTree API
+import xml.etree.ElementTree as ET
+
 #pysqlite
 import sqlite3
 
@@ -342,7 +324,7 @@ if "--local" in sys.argv:
 RADIUS = 240
 OFFSET = 64
 RATIO = math.sqrt(2)
-VERSION = "1.1.100"
+VERSION = "1.1.110"
 
 APPLICATION_ID = "org.openastro.AstroApp"
 #maximal number of items of history
@@ -418,6 +400,11 @@ FILTER_ZBS_FILES.set_name(name='ZBS')
 FILTER_ZBS_FILES.add_pattern(pattern='*.zbs')
 FILTER_ZBS_FILES.add_mime_type(mime_type='chart/zbs')
 
+def dprint(str):
+	""" debug print function """
+	if "--debug" in sys.argv or DEBUG:
+		print('%s' % str)
+
 #directories
 if LOCAL:
 	DATADIR=os.path.dirname(__file__)
@@ -428,7 +415,7 @@ elif os.path.exists(os.path.join('usr','local','share','openastro.org')):
 elif os.path.exists(os.path.join('usr','share','openastro.org')):
 	DATADIR=os.path.join('usr','share','openastro.org')
 else:
-	print("Exiting... can't find data directory")
+	dprint("Exiting... can't find data directory")
 	sys.exit()
 
 #Translations
@@ -439,22 +426,23 @@ LANGUAGES_LABEL={
 			"ca":"català",
 			"cs":"čeština",
 			"da":"dansk",
-			"nl":"Nederlands",
-			"eo":"Esperanto",
 			"en":"English",
+			"eo":"Esperanto",
+			"es":"Español",
 			"fi":"suomi",
 			"fr":"Français",
 			"de":"Deutsch",
+			"default":"default",
 			"el":"ελληνικά",
 			"hu":"magyar nyelv",
 			"it":"Italiano",
 			"ja":"日本",
 			"nds":"Plattdüütsch",
 			"nb":"Bokmål",
+			"nl":"Nederlands",
 			"pl":"język polski",
 			"rom":"rromani ćhib",
 			"ru":"Русский",
-			"es":"Español",
 			"sv":"svenska",
 			"uk":"українська мова",
 			"zh_TW":"正體字"
@@ -466,23 +454,21 @@ if not LOCAL:
 	TDomain = os.path.join(TDomain, 'locale')
 LANGUAGES=list(LANGUAGES_LABEL.keys())
 TRANSLATION={}
+#tell the domain, 'locale' is the folder containing your translations
+gettext.bindtextdomain('openastro', 'TDomain')
+gettext.textdomain('openastro')
+
 for i in range(len(LANGUAGES)):
 	try:
 		TRANSLATION[LANGUAGES[i]] = gettext.translation("openastro",TDomain,languages=[LANGUAGES[i]])
 	except IOError as err:
-		print("IOError! Invalid languages specified (%s) in %s" %(LANGUAGES[i],TDomain))
+		dprint("IOError! Invalid languages specified (%s) in %s" %(LANGUAGES[i],TDomain))
 		TRANSLATION[LANGUAGES[i]] = gettext.translation("openastro",TDomain,languages=['en'])
 try:
 	TRANSLATION["default"] = gettext.translation("openastro",TDomain)
 except IOError as err:
-	print("OpenAstro.org has not yet been translated in your language! Could not load translation...")
+	dprint("OpenAstro.org has not yet been translated in your language! Could not load translation...")
 	TRANSLATION["default"] = gettext.translation("openastro",TDomain,languages=['en'])
-
-def dprint(str):
-	""" debug print function """
-	if "--debug" in sys.argv or DEBUG:
-		print('%s' % str)
-
 
 """ OpenAstro configuration class """
 class OpenAstroCfg:
@@ -536,7 +522,7 @@ class OpenAstroCfg:
 			self.famousdb = os.path.join(DATADIR, 'famous.sql' )
 		return
 
-#Sqlite database
+""" OpenAstro Sqlite Database """
 class OpenAstroSqlite:
 	def __init__(self):
 		self.dbcheck=False
@@ -547,7 +533,6 @@ class OpenAstroSqlite:
 			self.dbcheck=True
 			dprint("  Database Check Enabled!")
 			dprint("-------------------------------")
-
 		#--purge purges database
 		if "--purge" in sys.argv:
 			self.dbcheck=True
@@ -555,7 +540,6 @@ class OpenAstroSqlite:
 			dprint("  Database Check Enabled!")
 			dprint("  Database Purge Enabled!")
 			dprint("-------------------------------")
-
 		self.open()
 		#get table names from sqlite_master for astrodb
 		sql='SELECT name FROM sqlite_master'
@@ -645,14 +629,14 @@ class OpenAstroSqlite:
 				self.cursor.execute(sql,(k,v))
 
 		#get astrocfg dict
-		sql='SELECT * FROM astrocfg'
+		sql = 'SELECT * FROM astrocfg'
 		self.cursor.execute(sql)
 		self.astrocfg = {}
 		for row in self.cursor:
-			self.astrocfg[row['name']]=row['value']
+			self.astrocfg[row['name']] = row['value']
 		#install language
 		self.setLanguage(self.astrocfg['language'])
-		self.lang_label=LANGUAGES_LABEL
+		self.lang_label = LANGUAGES_LABEL
 		#fix inconsitencies between in people's database
 		if self.dbcheck:
 			sql='PRAGMA table_info(event_natal)'
@@ -894,7 +878,7 @@ class OpenAstroSqlite:
 			dprint('creating sqlite table label in astrodb')
 
 		#default values for label (if dbcheck)
-		self.defaultLabel = {
+		self.defaultLabels = {
 			"cusp":_("Cusp"),
 			"longitude":_("Longitude"),
 			"latitude":_("Latitude"),
@@ -921,7 +905,7 @@ class OpenAstroSqlite:
 		if self.dbcheck:
 			dprint('dbcheck astrodb.label')
 			#insert values
-			for k,v in self.defaultLabel.items():
+			for k,v in self.defaultLabels.items():
 				sql='INSERT OR %s INTO label \
 				(name, value)\
 				VALUES("%s","%s")' % ( self.dbpurge , k, v )
@@ -945,7 +929,7 @@ class OpenAstroSqlite:
 			 	,label VARCHAR(50), label_short VARCHAR(20), visible_aspect_line INTEGER\
 			 	,visible_aspect_grid INTEGER)'
 			self.cursor.execute(sql)
-			self.dbcheck=True
+			self.dbcheck = True
 
 			dprint('creating sqlite table settings_planet in astrodb')
 
@@ -983,12 +967,15 @@ class OpenAstroSqlite:
 			'{0:10,180:10,90:10,120:10,60:6,30:3,150:3,45:3,135:3,72:1,144:1}'
 			]
 			self.value_settings_planet['label'] = [
-			_('Sun'),_('Moon'),_('Mercury'),_('Venus'),_('Mars'),_('Jupiter'),_('Saturn'),
-			_('Uranus'),_('Neptune'),_('Pluto'),_('North Node'),'?',_('Lilith'),_('Osc. Lilith'),
-			_('Earth'),_('Chiron'),_('Pholus'),_('Ceres'),_('Pallas'),_('Juno'),_('Vesta'),
-			'intp. apogee','intp. perigee',_('Asc'),_('Mc'),_('Dsc'),_('Ic'),_('Day Pars'),
-			_('Night Pars'),_('South Node'),_('Marriage Pars'),_('Black Sun'),_('Vulcanus'),
-			_('Persephone'),_('True Lilith')]
+				_('Sun'),_('Moon'), _('Mercury'),_('Venus'), _('Mars'),
+				_('Jupiter'), _('Saturn'), _('Uranus'), _('Neptune'),
+				_('Pluto'), _('North Node'),'?', _('Lilith'), _('Osc. Lilith'),
+				_('Earth'), _('Chiron'), _('Pholus'), _('Ceres'), _('Pallas'),
+				_('Juno'),_('Vesta'), 'intp. apogee', 'intp. perigee',
+				_('Asc'), _('Mc'), _('Dsc'), _('Ic'), _('Day Pars'),
+				_('Night Pars'),_('South Node'),_('Marriage Pars'),
+				_('Black Sun'), _('Vulcanus'), _('Persephone'),_('True Lilith')
+			]
 			self.value_settings_planet['label_short'] = [
 			'sun','moon','mercury','venus','mars','jupiter','saturn',
 			'uranus','neptune','pluto','Node','?','Lilith','?',
@@ -1068,7 +1055,7 @@ class OpenAstroSqlite:
 						self.value_settings_planet['label_short'][i],
 						self.value_settings_planet['visible_aspect_line'][i],
 						self.value_settings_planet['visible_aspect_grid'][i]
-						)
+				)
 				self.cursor.execute(sql,values)
 		#commit initial changes
 		self.updateHistory()
@@ -1076,7 +1063,9 @@ class OpenAstroSqlite:
 		self.plink.commit()
 		self.close()
 
+	""" still class OpenAstroSqlite """
 	def setLanguage(self, lang=None):
+
 		if lang==None or lang=="default":
 			TRANSLATION["default"].install()
 			dprint("installing default language")
@@ -1108,7 +1097,7 @@ class OpenAstroSqlite:
 	def setAstrocfg(self,key,val):
 		sql='INSERT OR REPLACE INTO astrocfg (name,value) VALUES (?,?)'
 		self.query([sql],[(key,val)])
-		self.astrocfg[key]=val
+		self.astrocfg[key] = val
 		return
 
 	def getColors(self):
@@ -1126,55 +1115,115 @@ class OpenAstroSqlite:
 		self.open()
 		sql='SELECT * FROM label'
 		self.cursor.execute(sql)
+		rows = self.cursor.fetchall()
+		#convert row list into dictionary
+		labels = {}
+		for row in rows:
+			labels[row[0]] = row[1]
+		self.close()
+		#update values for label
+		label_labels = {
+			"cusp":_("Cusp"),
+			"longitude":_("Longitude"),
+			"latitude":_("Latitude"),
+			"north":_("North"),
+			"east":_("East"),
+			"south":_("South"),
+			"west":_("West"),
+			"apparent_geocentric":_("Apparent Geocentric"),
+			"true_geocentric":_("True Geocentric"),
+			"topocentric":_("Topocentric"),
+			"heliocentric":_("Heliocentric"),
+			"fire":_("Fire"),
+			"earth":_("Earth (element)"),
+			"air":_("Air"),
+			"water":_("Water"),
+			"radix":_("Radix"),
+			"transit":_("Transit"),
+			"synastry":_("Synastry"),
+			"composite":_("Composite"),
+			"combine":_("Combine"),
+			"solar":_("Solar"),
+			"secondary_progressions":_("Secondary Progressions")
+		}
+		for i, key in enumerate(labels.keys()):
+			labels[key] = label_labels[key]
+		return labels
+	"""
+	def getLabel(self):
+		self.open()
+		sql='SELECT * FROM label'
+		self.cursor.execute(sql)
 		list=self.cursor.fetchall()
 		out={}
 		for i in range(len(list)):
 			out[list[i][0]] = list[i][1]
 		self.close()
 		return out
-
+	"""
 	def getDatabase(self):
 		self.open()
-
 		sql = 'SELECT * FROM event_natal ORDER BY id ASC'
 		self.pcursor.execute(sql)
-		dict = []
+		records = []
 		for row in self.pcursor:
-			s={}
+			s = {}
 			for key,val in self.ptable_event_natal.items():
 				if row[key] == None:
-					s[key]=""
+					s[key] = ""
 				else:
-					s[key]=row[key]
-			dict.append(s)
+					s[key] = row[key]
+			records.append(s)
 		self.close()
-		return dict
+		return records
 
 	def getSettingsPlanet(self):
 		self.open()
 		sql = 'SELECT * FROM settings_planet ORDER BY id ASC'
 		self.cursor.execute(sql)
-		dict = []
+		#planets is a list if a dictionary for every planet
+		planets = []
 		for row in self.cursor:
-			s={}
-			for key,val in self.table_settings_planet.items():
-				s[key]=row[key]
-			dict.append(s)
+			s = {}
+			for key, val in self.table_settings_planet.items():
+				s[key] = row[key]
+			planets.append(s)
 		self.close()
-		return dict
+		planet_labels = [
+			_('Sun'),_('Moon'), _('Mercury'),_('Venus'), _('Mars'),
+			_('Jupiter'), _('Saturn'), _('Uranus'), _('Neptune'),
+			_('Pluto'), _('North Node'),'?', _('Lilith'), _('Osc. Lilith'),
+			_('Earth'), _('Chiron'), _('Pholus'), _('Ceres'), _('Pallas'),
+			_('Juno'),_('Vesta'), 'intp. apogee', 'intp. perigee',
+			_('Asc'), _('Mc'), _('Dsc'), _('Ic'), _('Day Pars'),
+			_('Night Pars'),_('South Node'),_('Marriage Pars'),
+			_('Black Sun'), _('Vulcanus'), _('Persephone'),_('True Lilith')
+		]
+		#planets is a list if dictionaries for every planet
+		for i, planet in enumerate(planets):
+			planet['label'] = planet_labels[i]
+		return planets
 
 	def getSettingsAspect(self):
 		self.open()
 		sql = 'SELECT * FROM settings_aspect ORDER BY degree ASC'
 		self.cursor.execute(sql)
-		dict = []
+		aspects = []
 		for row in self.cursor:
 			#degree, name, color, visible, visible_grid, is_major, is_minor, orb
-			dict.append({'degree':row['degree'],'name':row['name'],'color':row['color']
+			aspects.append({'degree':row['degree'],'name':row['name'],'color':row['color']
 			,'visible':row['visible'],'visible_grid':row['visible_grid']
 			,'is_major':row['is_major'],'is_minor':row['is_minor'],'orb':row['orb']})
 		self.close()
-		return dict
+		aspect_labels = [
+			_('conjunction'), _('semi-sextile'), _('semi-square'),
+			_('sextile'), _('quintile') , _('square'),
+			_('trine'), _('sesquiquadrate'), _('biquintile'),
+			_('quincunx') , _('opposition')
+		]
+		for i, aspect in enumerate(aspects):
+			aspect['name'] = aspect_labels[i]
+		return aspects
 
 	def getSettingsLocation(self):
 		#look if location is known
@@ -1227,9 +1276,7 @@ class OpenAstroSqlite:
 			self.history = self.cursor.fetchall()
 		return
 
-	"""
-	Function to import zet8 databases
-	"""
+	""" Function to import zet8 databases """
 	def importZet8(self, target_db, data):
 
 		target_con = sqlite3.connect(target_db)
@@ -1327,9 +1374,7 @@ class OpenAstroSqlite:
 		input_con.close()
 		return
 
-	"""
-	Basic Query Functions for common databases
-	"""
+	""" Basic Query Functions for common databases 	"""
 	def query(self, sql, tuple=None):
 		l=sqlite3.connect(app.cfg.astrodb)
 		c=l.cursor()
@@ -1446,8 +1491,9 @@ class ViewSVG(Gtk.Widget):
 			height = self.texture.get_intrinsic_height() * self.scale
 			return (height, height, -1, -1)
 
+""" EventData to populate ColumnView """
 class EventData(GObject.GObject):
-	def __init__(self, ident: gint, name: str, birth: str, location: str):
+	def __init__(self, ident: int, name: str, birth: str, location: str):
 		super(EventData, self).__init__()
 		self.id = ident
 		self.name = name
@@ -1484,13 +1530,14 @@ def bind_location(widget, item):
 	obj = item.get_item()
 	label.set_label(obj.location)
 
+""" Application Window """
 class AstroWindow(Gtk.ApplicationWindow):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
-		self.props.show_menubar = True
 		""" >>> set icon changed in GTK4 """
 
+		self.props.show_menubar = True
 		#belonges in the windows group and hence have the 'win' prefix
 		max_action = Gio.SimpleAction.new_stateful(
 			"maximize", None, GLib.Variant.new_boolean(False)
@@ -1674,9 +1721,25 @@ class AstroWindow(Gtk.ApplicationWindow):
 		return
 
 	def updateUI(self, first_time):
+		parent = self.get_application()
+		if first_time:
+			#init menu items
+			chart_items = [ _('New'),_('Open'),_('Save'),_('Import'),
+				_('Oroboros (*.xml)'),_('Astrolog (*.dat)'),_('Skylendar (*.skif)'),
+				_('Zet8 Dbase (*.zbs)'),_('Export'),_('PNG file'),_('JPG file'),
+				_('SVG file'),_('PDF file'),_('Close') ]
+			self.chart_xml = parent.translate_menu_items(text=CHART_XML,items=chart_items)
+			self.history_label =_('History')
+			self.chart_label = _('Chart')
+			event_items = [ _('Edit Event'),_('Open Database'),
+				_('Open Famous People Database') ]
+			self.event_xml = parent.translate_menu_items(text=EVENT_XML,items=event_items)
+			self.quick_label = _('Quick Open Database')
+			self.event_label = _('Event')
 		#get menubar of application
-		parent_app = self.get_application()
-		menu = parent_app.get_menubar()
+		menu = parent.get_menubar()
+		#uüdate labels
+		#self.label = parent.db.getLabel()
 		#create history actions, last will be first
 		entries = app.db.history
 		l = len(entries)
@@ -1697,7 +1760,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 		if first_time:
 			#generate 'Chart' menu
 			chart_builder = Gtk.Builder()
-			chart_builder.add_from_string(CHART_XML)
+			chart_builder.add_from_string(self.chart_xml)
 			self.chart_menu = chart_builder.get_object("ChartUI")
 			#make action for 'quickopendb'
 			history_action = Gio.SimpleAction.new_stateful(
@@ -1719,9 +1782,9 @@ class AstroWindow(Gtk.ApplicationWindow):
 		history_menu = update_builder.get_object("UpdateUI")
 		if not first_time:
 			self.chart_menu.remove(3)
-		self.chart_menu.insert_submenu(3, 'History', history_menu)
-		#becomes first item in menubar
-		menu.insert_submenu(1, 'Chart', self.chart_menu)
+		self.chart_menu.insert_submenu(3, self.history_label, history_menu)
+		#becomes second item in menubar
+		menu.insert_submenu(1, self.chart_label, self.chart_menu)
 		# create 'Quick Open' actions
 		self.DB = app.db.getDatabase()
 		t_item = Template(M_ITEM)
@@ -1734,7 +1797,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 		if first_time:
 			#generate 'Event' menu
 			event_builder = Gtk.Builder()
-			event_builder.add_from_string(EVENT_XML)
+			event_builder.add_from_string(self.event_xml)
 			self.event_menu = event_builder.get_object("EventUI")
 			#make action for 'quickopendb'
 			quick_open_action = Gio.SimpleAction.new_stateful(
@@ -1756,8 +1819,10 @@ class AstroWindow(Gtk.ApplicationWindow):
 		quick_open_menu = update_builder.get_object("UpdateUI")
 		if not first_time:
 			self.event_menu.remove(1)
-		self.event_menu.insert_submenu(1, 'Quick Open Database', quick_open_menu)
-		menu.insert_submenu(2, 'Event', self.event_menu)
+		self.event_menu.insert_submenu(1, self.quick_label, quick_open_menu)
+		menu.insert_submenu(2, self.event_label, self.event_menu)
+		if first_time:
+			self.props.show_menubar = True
 
 	def historydb_callback(self, action, parameter):
 		idx = parameter.get_int32()
@@ -1775,8 +1840,8 @@ class AstroWindow(Gtk.ApplicationWindow):
 				self.updateChartList(None, entry)
 				break
 
+	""" Update the chart with input list data """
 	def updateChartList(self, b, list):
-		""" Update the chart with input list data """
 		app.type = "Radix"
 		app.charttype = app.label["radix"]
 		app.name = str(list["name"])
@@ -1964,7 +2029,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 		gio_list_store.append(item=FILTER_TXT_FILES)
 		file_dialog = Gtk.FileDialog.new()
 		file_dialog.set_title(title=_('Save Chart'))
-		file_dialog.set_initial_name(name=_('AstroChart.oac'))
+		file_dialog.set_initial_name(name='AstroChart.oac')
 		file_dialog.set_modal(modal=True)
 		file_dialog.set_filters(filters=gio_list_store)
 		file_dialog.save(parent=self, callback=self.on_file_dialog_dismissed)
@@ -2034,9 +2099,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 			gio_filters.append(item=FILTER_PDF_FILES)
 			self.file_to_save(filters=gio_filters, name=initial_name, export_app=self.exportPDF)
 
-	"""
-	 Print Operations
-	"""
+	""" Print Operations """
 	def doPrintBegin(self, operation, context):
 		operation.set_n_pages(1)
 		operation.set_use_full_page(False)
@@ -2045,8 +2108,8 @@ class AstroWindow(Gtk.ApplicationWindow):
 		ps.set_paper_size(Gtk.PaperSize(Gtk.PAPER_NAME_A4))
 		operation.set_default_page_setup(ps)
 
+	""" Render SVG into cairo context """
 	def doPrintDraw(self, operation, context, page_nr):
-		""" Render SVG into cairo context """
 		cr = context.get_cairo_context()
 		#draw svg
 		printing={}
@@ -2174,11 +2237,6 @@ class AstroWindow(Gtk.ApplicationWindow):
 			self.GEON_nearest = app.db.gnearest(app.geolat, app.geolon)
 			# continents
 			self.continents = Gtk.DropDown()
-			"""
-			cell = Gtk.CellRendererText()
-			self.continents.pack_start(cell, False)
-			self.continents.add_attribute(cell, 'text', 0)
-			"""
 			grid.attach(self.continents, 0, 3, 1, 1)
 			#self.continents.set_wrap_width(1)
 			sql = 'SELECT * FROM continent ORDER BY name ASC'
@@ -2200,31 +2258,16 @@ class AstroWindow(Gtk.ApplicationWindow):
 			self.continents.set_model(model=continent_info)
 			# countries
 			self.countries = Gtk.DropDown()
-			"""
-			cell = Gtk.CellRendererText()
-			self.countries.pack_start(cell, False)
-			self.countries.add_attribute(cell, 'text', 0)
-			"""
 			grid.attach(self.countries, 1, 3, 1, 1)
 			#self.countries.set_wrap_width(1) 
 			self.countries.connect('notify::selected-item', self.eventDataChangedCountrybox)
 			# provinces
 			self.provinces = Gtk.DropDown()
-			"""
-			cell = Gtk.CellRendererText()
-			self.provinces.pack_start(cell, False)
-			self.provinces.add_attribute(cell, 'text', 0)
-			"""
 			grid.attach(self.provinces, 2, 3, 1, 1)
 			#self.provinces.set_wrap_width(1) 
 			self.provinces.connect('notify::selected-item', self.eventDataChangedProvbox)
 			# cities
 			self.cities = Gtk.DropDown()
-			"""
-			cell = Gtk.CellRendererText()
-			self.cities.pack_start(cell, False)
-			self.cities.add_attribute(cell, 'text', 0)
-			"""
 			grid.attach(self.cities, 3, 3, 1, 1)
 			#self.cities.set_wrap_width(2) 
 			self.cities.connect('notify::selected-item', self.eventDataChangedCitybox)
@@ -2492,7 +2535,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 				#dialog.set_icon_from_file(app.cfg.iconWindow)
 				dialog.set_default_size(256,-1)
 				vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-				double = Gtk.Label(label=_('There is allready an entry for this name, please choose another'))
+				double = Gtk.Label(label=_('There is already an entry for this name, please choose another'))
 				double.set_wrap(True)
 				vbox.append(double)
 				button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -2507,8 +2550,8 @@ class AstroWindow(Gtk.ApplicationWindow):
 				return
 		#ask for confirmation
 		alert_dialog = Gtk.AlertDialog()
-		alert_dialog.set_message("Caution")
-		confirm = 'Are you sure you want to save < {0} > to the database?'.format(self.name.props.text)
+		alert_dialog.set_message(_('Caution'))
+		confirm = _('Are you sure you want to save < {0} > to the database?').format(self.name.props.text)
 		alert_dialog.set_detail(confirm)
 		alert_dialog.set_modal(True)
 		alert_dialog.set_buttons(["Cancel", "OK"])
@@ -2607,13 +2650,13 @@ class AstroWindow(Gtk.ApplicationWindow):
 		column_view.props.show_row_separators = False
 		column_view.props.show_column_separators = True
 
-		id_col = Gtk.ColumnViewColumn.new("Id")
-		id_col.set_resizable(True)
 		#id_col.set_fixed_width(112)
 		id_factory = Gtk.SignalListItemFactory()
 		id_factory.connect("setup", setup)
 		id_factory.connect("bind", bind_ident)
-		id_col.set_factory(id_factory)
+		id_col = Gtk.ColumnViewColumn.new(title="Id",factory=id_factory)
+		id_col.set_resizable(True)
+		#id_col.set_factory(id_factory)
 		column_view.append_column(id_col)
 
 		name_col = Gtk.ColumnViewColumn.new("Name")
@@ -2685,7 +2728,6 @@ class AstroWindow(Gtk.ApplicationWindow):
 		#display window
 		vbox.append(button_box)
 		self.win_OD.set_child(vbox)
-		""" self.win_OD_treeview.set_model(model=self.listmodel) """
 		self.win_OD.present()
 		return
 
@@ -2711,7 +2753,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 				#dialog.set_icon_from_file(app.cfg.iconWindow)
 				dialog.set_default_size(256,-1)
 				vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-				double = Gtk.Label(label=_('There is allready an entry for this name, please choose another'))
+				double = Gtk.Label(label=_('There is already an entry for this name, please choose another'))
 				double.set_wrap(True)
 				vbox.append(double)
 				button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -2726,11 +2768,11 @@ class AstroWindow(Gtk.ApplicationWindow):
 				return
 		#ask for confirmation
 		alert_dialog = Gtk.AlertDialog()
-		alert_dialog.set_message("Caution")
-		confirm = 'Are you sure you want to save < {0} > to the database?'.format(self.name.props.text)
+		alert_dialog.set_message(_('Caution'))
+		confirm = _('Are you sure you want to save < {0} > to the database?').format(self.name.props.text)
 		alert_dialog.set_detail(confirm)
 		alert_dialog.set_modal(True)
-		alert_dialog.set_buttons(["Cancel", "OK"])
+		alert_dialog.set_buttons([_("Cancel"), _("OK")])
 		alert_dialog.choose(parent=self, cancellable=None, callback=self.on_save_record, user_data=None)
    
 	def on_save_record(self, source_obj, async_res, user_data):
@@ -2774,11 +2816,11 @@ class AstroWindow(Gtk.ApplicationWindow):
 		choosen_name = del_record['name']
 		#ask for confirmation
 		alert_dialog = Gtk.AlertDialog()
-		alert_dialog.set_message("Caution")
+		alert_dialog.set_message(_("Caution"))
 		confirm = _('You are about to delete record < {0} >. Proceed?').format(choosen_name)
 		alert_dialog.set_detail(confirm)
 		alert_dialog.set_modal(True)
-		alert_dialog.set_buttons(["Cancel", "OK"])
+		alert_dialog.set_buttons([_("Cancel"), _("OK")])
 		alert_dialog.choose(parent=self, cancellable=None, callback=self.on_delete_perform, user_data=del_record)
    
 	def on_delete_perform(self, source_obj, async_res, record):
@@ -2817,7 +2859,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 			dt_utc = datetime.datetime(int(data["year"]), int(data["month"]), int(data["day"]), h, m, s)
 			dt = dt_utc + datetime.timedelta(seconds=float(data["timezone"])*float(3600))
 			birth_date = str(dt.year)+'-%(#1)02d-%(#2)02d %(#3)02d:%(#4)02d:%(#5)02d' % {'#1':dt.month,'#2':dt.day,'#3':dt.hour,'#4':dt.minute,'#5':dt.second}
-			event_data = EventData(ident=data["id"],name=data["name"],birth=birth_date,location=data["location"])
+			event_data = EventData(ident=str(data["id"]),name=data["name"],birth=birth_date,location=data["location"])
 			self.listmodel.append(event_data)
 		return
 
@@ -2829,7 +2871,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 			dt_utc=datetime.datetime(int(data["year"]),int(data["month"]),int(data["day"]),h,m,s)
 			dt = dt_utc + datetime.timedelta(seconds=float(data["timezone"])*float(3600))
 			birth_date = str(dt.year)+'-%(#1)02d-%(#2)02d %(#3)02d:%(#4)02d:%(#5)02d' % {'#1':dt.month,'#2':dt.day,'#3':dt.hour,'#4':dt.minute,'#5':dt.second}
-			event_data = EventData(ident=data["id"],name=data["name"],birth=birth_date,location=data["location"])
+			event_data = EventData(ident=str(data["id"]),name=data["name"],birth=birth_date,location=data["location"])
 			self.listmodel.append(event_data)
 		return
 
@@ -2843,8 +2885,8 @@ class AstroWindow(Gtk.ApplicationWindow):
 		self.fcursor = self.flink.cursor()
 		if search is not None:
 			sql='SELECT * FROM famous WHERE year>? AND \
-			(lastname LIKE ? OR firstname LIKE ? OR name LIKE ?)\
-			 LIMIT %s'%(limit)
+			(lastname LIKE ? OR firstname LIKE ? OR name LIKE ?) \
+			LIMIT %s'%(limit)
 			self.fcursor.execute(sql,(1800,search,search,search))
 		else:
 			sql='SELECT * FROM famous WHERE year>? LIMIT %s'%(limit)
@@ -2878,24 +2920,24 @@ class AstroWindow(Gtk.ApplicationWindow):
 			day = dt_utc.day
 			hour = app.decHourJoin(dt_utc.hour,dt_utc.minute,dt_utc.second)
 			newDB.append({
-						"id":oldDB[a][0], #index
-						"name":oldDB[a][3]+" "+oldDB[a][4], #christian name, name
-						"year":year, #year
-						"month":month, #month
-						"day":day, #day
-						"hour":hour, #hour
-						"geolon":oldDB[a][18], #geolon
-						"geolat":oldDB[a][17], #geolat
-						"altitude":"25", #altitude
-						"location":oldDB[a][16], #location
-						"timezone":timezone, #timezone
-						"notes":"",#notes
-						"image":"",#image
-						"countrycode":oldDB[a][8], #countrycode
-						"geonameid":oldDB[a][19], #geonameid
-						"timezonestr":oldDB[a][20], #timezonestr
-						"extra":"" #extra
-						})
+				"id":oldDB[a][0], #index
+				"name":oldDB[a][3]+" "+oldDB[a][4], #christian name, name
+				"year":year, #year
+				"month":month, #month
+				"day":day, #day
+				"hour":hour, #hour
+				"geolon":oldDB[a][18], #geolon
+				"geolat":oldDB[a][17], #geolat
+				"altitude":"25", #altitude
+				"location":oldDB[a][16], #location
+				"timezone":timezone, #timezone
+				"notes":"",#notes
+				"image":"",#image
+				"countrycode":oldDB[a][8], #countrycode
+				"geonameid":oldDB[a][19], #geonameid
+				"timezonestr":oldDB[a][20], #timezonestr
+				"extra":"" #extra
+			})
 		return newDB
 
 	def chartType_callback(self, action, parameter):
@@ -3091,10 +3133,6 @@ class AstroWindow(Gtk.ApplicationWindow):
 		self.win_SC = Gtk.Window(title=_("General Configuration"))
 		""" >>> set_icon changed in GTK4 """
 
-		#self.win_SC.set_title(_("General Configuration"))
-		#self.win_SC.connect("delete_event", lambda w,e: self.win_SC.destroy())
-		#self.win_SC.move(200,150)
-		#self.win_SC.set_border_width(5)
 		self.win_SC.set_default_size(364,512)
 		#data dictionary
 		data = {}
@@ -3247,7 +3285,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 				"J2000":_("J2000"),
 				"J1900":_("J1900"),
 				"B1950":_("B1950")
-				}
+		}
 		self.siderealmode_list = [
 				"FAGAN_BRADLEY",
 				"LAHIRI",
@@ -3268,7 +3306,8 @@ class AstroWindow(Gtk.ApplicationWindow):
 				"SASSANIAN",
 				"J2000",
 				"J1900",
-				"B1950"]
+				"B1950"
+		]
 		sideralmodes = Gtk.StringList()
 		active = 0
 		for i, key in enumerate(self.siderealmode_chartview.keys()):
@@ -3301,9 +3340,6 @@ class AstroWindow(Gtk.ApplicationWindow):
 		# ok button
 		button = Gtk.Button.new_with_mnemonic(label=_("OK"))
 		button.connect("clicked", self.settingsConfigurationSubmit, data)
-		#button.set_can_default(True)
-		#self.win_SC.action_area.pack_start(button, True, True, 0)
-		#button.grab_default()
 		button_box.prepend(button)
 		# cancel button
 		button = Gtk.Button.new_with_mnemonic(label=_("Cancel"))
@@ -3361,16 +3397,31 @@ class AstroWindow(Gtk.ApplicationWindow):
 		else:
 			active_lang = LANGUAGES[active-1]
 		if active_lang != app.db.astrocfg['language']:
-			update = True
-		app.db.setAstrocfg("language",active_lang)
-		# set language to be used
-		app.db.setLanguage(active_lang)
+			self.confirm_language(active_lang)
 		self.updateUI(first_time=False)
 		# updatechart
 		if update:
 			self.updateChart()
 		self.win_SC.destroy()
 		return
+
+	def confirm_language(self,lang):
+		alert_dialog = Gtk.AlertDialog()
+		alert_dialog.set_message(_('Caution'))
+		confirm = _('Really change to language < {0} > ?\n').format(LANGUAGES_LABEL[lang])+_('Program will restart !')
+		alert_dialog.set_detail(confirm)
+		alert_dialog.set_modal(True)
+		alert_dialog.set_buttons(["Cancel", "OK"])
+		alert_dialog.choose(parent=self, cancellable=None, callback=self.on_change_language, user_data=lang)
+
+	def on_change_language(self, source_obj, async_res, lang):
+		result = source_obj.choose_finish(async_res)
+		if result == 1:
+			app.db.setAstrocfg("language",lang)
+			# set language to be used
+			app.db.setLanguage(lang=lang)
+			#restart
+			os.execv(sys.executable, ['python'] + sys.argv)
 
 	"""
 	Menu item to set home location:
@@ -3387,9 +3438,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 		self.win_SL = Gtk.Window(title=_("Please Set Your Home Location"), modal=True)
 		""" >>> set_icon changed in GTK4 """
 
-		self.win_SL.connect('destroy', self.settingsLocationDestroy, self.win_SL)
-		#self.win_SL.move(150,150)
-		#self.win_SL.set_border_width(10)
+		self.win_SL.connect('destroy', self.settingsLocationDestroy)
 		self.win_SL.set_default_size(-1,144)
 		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
 		vbox.props.margin_start = 16
@@ -3414,7 +3463,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 		grid.attach(longitude, 0, 3, 1, 1)
 		self.LLon = Gtk.Label(label=app.home_geolon)
 		grid.attach_next_to(child=self.LLon, sibling=longitude, side=Gtk.PositionType.RIGHT, width=1, height=1)
-		# use geocoders if we have an internet connection else geonames database
+		#use geocoders if we have an internet connection else geonames database
 		if self.iconn:
 			# entry for location (edigrid)
 			hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
@@ -3434,14 +3483,12 @@ class AstroWindow(Gtk.ApplicationWindow):
 			hbox.append(self.geoCC)
 			grid.attach(hbox, 0, 0, 2, 1)
 		else:
-			#grid.attach(hbox, 0, 0, 2, 1)
 			# get nearest home
 			self.GEON_nearest = app.db.gnearest(app.geolat,app.geolon)
 			# continents
 			self.continents = Gtk.DropDown()
 			self.contstore = Gtk.ListStore(str,str)
 			grid.attach(self.continents, 0, 0, 1, 1)
-			#self.continents.set_wrap_width(1)
 			sql = 'SELECT * FROM continent ORDER BY name ASC'
 			app.db.gquery(sql)
 			continent_info = Gtk.StringList()
@@ -3667,17 +3714,12 @@ class AstroWindow(Gtk.ApplicationWindow):
 		# create a new window
 		self.win_SSP = Gtk.Window()
 		""" set_icon """
-		#self.win_SSP.set_icon_from_file(app.cfg.iconWindow)
 		self.win_SSP.set_title(_("Enter Date"))
-		#self.win_SSP.connect("delete_event", lambda w,e: self.win_SSP.destroy())
-		#self.win_SSP.move(150,150)
-		#self.win_SSP.set_border_width(5)
 		self.win_SSP.set_size_request(320,180)
 		#create a grid
 		grid = Gtk.Grid()
 		grid.set_column_spacing(8)
 		grid.set_row_spacing(8)
-		#grid.set_border_width(10)
 		grid.set_vexpand(True)
 		# options
 		header = Gtk.Label(label=_("Select date for Secondary Progression")+":")
@@ -3707,7 +3749,6 @@ class AstroWindow(Gtk.ApplicationWindow):
 		spinner['D'].set_numeric(True)
 		spinner['D'].set_value(datetime.datetime.now().day)
 		grid.attach(spinner['D'], 5, 1, 1, 1)
-		# pack_start(child, expand = True, fill = True, padding = 0)
 		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		hbox.append(Gtk.Label(label=_('Hour')+": "))
 		adjustment = Gtk.Adjustment(lower=0, upper=23, step_increment=1)
@@ -3725,7 +3766,6 @@ class AstroWindow(Gtk.ApplicationWindow):
 		hbox.append(spinner['m'])
 		grid.attach(hbox, 1, 2, 5, 1)
 		#make the ui layout with ok button
-		#self.win_SSP.vbox.append(grid)
 		#ok button
 		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		button_box.set_homogeneous(True)
@@ -3815,12 +3855,10 @@ class AstroWindow(Gtk.ApplicationWindow):
 		app.makeTimelineSVG(printing=None,y=self.tMT_year,m=self.tMT_month)
 			#generate window
 		self.win_TMT = Gtk.Window()
-		#self.win_TMT.connect("destroy", lambda w: self.win_TMT.destroy())
 		self.win_TMT.set_title("OpenAstro.org Monthly Timeline")
 		""" >>> set_icon """
 		#self.win_TMT.set_icon_from_file(app.cfg.iconWindow)
 		self.win_TMT.set_default_size(1024, 732)
-		#self.win_TMT.move(50,50)
 		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		button = Gtk.Button.new_with_mnemonic(label=_('Print'))
@@ -3935,7 +3973,6 @@ class AstroWindow(Gtk.ApplicationWindow):
 		""" >>> set_icon """
 		#self.win_TCA.set_icon_from_file(app.cfg.iconWindow)
 		self.win_TCA.set_default_size(924,732)
-		#self.win_TCA.move(50,50)
 		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		vbox.set_vexpand(True)
 		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -4004,7 +4041,6 @@ class AstroWindow(Gtk.ApplicationWindow):
 	def importSQL(self, local_file):
 		app.db.databaseMerge(app.cfg.peopledb, local_file.get_path())
 
-	# callback function for about (see the AboutDialog example)
 	def about_callback(self, action, parameter):
 		about = Gtk.AboutDialog(transient_for=self, modal=True)
 		about.set_logo(Gdk.Texture.new_from_filename('about.xpm'));
@@ -4046,13 +4082,29 @@ class AstroApplication(Gtk.Application):
 		self.height = self.screen_height-OFFSET
 		self.width = self.height * RATIO
 		self.window = None
-
+		#command line options
+		self.add_main_option(
+			"dbcheck",
+			ord("c"),
+			GLib.OptionFlags.NONE,
+			GLib.OptionArg.NONE,
+			"AstroChart Database Check",
+			None,
+		)
 		self.add_main_option(
 			"local",
 			ord("l"),
 			GLib.OptionFlags.NONE,
 			GLib.OptionArg.NONE,
 			"AstroChart Standakone",
+			None,
+		)
+		self.add_main_option(
+			"purge",
+			ord("p"),
+			GLib.OptionFlags.NONE,
+			GLib.OptionArg.NONE,
+			"AstroChart Database Cleanup",
 			None,
 		)
 
@@ -4063,13 +4115,21 @@ class AstroApplication(Gtk.Application):
 		quit_action.connect("activate", self.on_quit)
 		self.add_action(quit_action)
 		self.set_accels_for_action("app.quit", ["<Primary>Q"])
-		""" Configuration / Data Base / Calculations / Window """
 		#configuration
 		self.cfg = OpenAstroCfg()
 		# handle data bases
 		self.db = OpenAstroSqlite()
+		#get color configuration
+		self.colors = self.db.getColors()
 		#get label configuration
-		self.label = self.db.getLabel()
+		#self.label = self.db.getLabel()
+		# 12 zodiacs
+		self.zodiac = ['aries','taurus','gemini','cancer','leo','virgo','libra','scorpio','sagittarius','capricorn','aquarius','pisces']
+		self.zodiac_short = ['Ari','Tau','Gem','Cnc','Leo','Vir','Lib','Sco','Sgr','Cap','Aqr','Psc']
+		self.zodiac_color = ['#482900','#6b3d00','#5995e7','#2b4972','#c54100','#2b286f','#69acf1','#ffd237','#ff7200','#863c00','#4f0377','#6cbfff']
+		self.zodiac_element = ['fire','earth','air','water','fire','earth','air','water','fire','earth','air','water']
+
+		""" Configuration / Data Base / Calculations / Window """
 		#check for home
 		self.home_location,self.home_geolat,self.home_geolon,self.home_countrycode,self.home_timezonestr = app.db.getSettingsLocation()
 		if self.home_location == '' or self.home_geolat == '' or self.home_geolon == '':
@@ -4098,7 +4158,7 @@ class AstroApplication(Gtk.Application):
 		dt_utc = dt.replace(tzinfo=None) - dt.utcoffset()
 		#Default
 		self.name = _("Here and Now")
-		self.charttype = self.label["radix"]
+		self.charttype = _('Radix')
 		self.year = dt_utc.year
 		self.month = dt_utc.month
 		self.day = dt_utc.day
@@ -4114,18 +4174,27 @@ class AstroApplication(Gtk.Application):
 		self.type = "Radix"
 		# Default dpi for svg
 		self.default_dpi=400
-		# 12 zodiacs
-		self.zodiac = ['aries','taurus','gemini','cancer','leo','virgo','libra','scorpio','sagittarius','capricorn','aquarius','pisces']
-		self.zodiac_short = ['Ari','Tau','Gem','Cnc','Leo','Vir','Lib','Sco','Sgr','Cap','Aqr','Psc']
-		self.zodiac_color = ['#482900','#6b3d00','#5995e7','#2b4972','#c54100','#2b286f','#69acf1','#ffd237','#ff7200','#863c00','#4f0377','#6cbfff']
-		self.zodiac_element = ['fire','earth','air','water','fire','earth','air','water','fire','earth','air','water']
-		#get color configuration
-		self.colors = self.db.getColors()
-		builder = Gtk.Builder.new_from_string(MENU_XML, -1)
-		self.menubar = builder.get_object("MenuBar")
-		self.set_menubar(self.menubar)
+
+	def translate_menu_items(self, text, items):
+		interface = ET.fromstring(text)
+		for i, node in enumerate(interface.findall(".//*[@translatable='yes']")):
+			node.text = items[i]
+		return ET.tostring(element=interface,encoding='unicode',method='xml')
 
 	def do_activate(self):
+		#translate menu items
+		menu_items = [ _('Application'),_('Maximize'),_('About'),_('Quit'),_('Settings'),
+			_('Set Location'),_('Configuration'),_('Chart Types'),_('Radix Chart'),
+			_('Transit Chart'),_('Synastry Chart'),_('Composite Chart'),_('Combine Chart'),
+			_('Solar Return'),_('Solar Progression'),_('Tables'),_('Monthly Timeline'),
+			_('Cusp Aspects'),_('Zoom'),_('Out'),_('80%'),_('100%'),_('150%'),
+			_('200%'),_('In'),_('Extra'),_('Export Database'),_('Import Database'),
+			_('Help'),_('About') ]
+		menu_xml = self.translate_menu_items(text=MENU_XML,items=menu_items)
+		builder = Gtk.Builder()
+		builder.add_from_string(menu_xml)
+		self.menubar = builder.get_object("MenuBar")
+		self.set_menubar(self.menubar)
 		# allow only a single window and raise any existing ones
 		if self.window is None:
 			# Windows are associated with the application
@@ -4245,6 +4314,8 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 		self.planets = self.db.getSettingsPlanet()
 		#get database aspect settings
 		self.aspects = self.db.getSettingsAspect()
+		#update the labels
+		self.label = self.db.getLabel()
 		#Combine module data
 		if self.type == "Combine":
 			#make calculations
@@ -4408,8 +4479,8 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 			td['makeAspectGrid'] = self.makeAspectTransitGrid( r )
 			td['makePatterns'] = ''
 		else:
-			td['transitRing']=""
-			td['degreeRing']=self.degreeRing( r )
+			td['transitRing'] = ""
+			td['degreeRing'] = self.degreeRing( r )
 			#circles
 			td['c1'] = 'cx="' + str(r) + '" cy="' + str(r) + '" r="' + str(r-self.c1) + '"'
 			td['c1style'] = 'fill: none; stroke: %s; stroke-width: 1px; '%(self.colors['zodiac_radix_ring_2'])
@@ -4452,9 +4523,9 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 				}
 		if self.db.astrocfg['zodiactype'] == 'sidereal':
 			td['bottomLeft1']=_("Sidereal")
-			td['bottomLeft2']=siderealmode_chartview[self.db.astrocfg['siderealmode']]
+			td['bottomLeft2'] = siderealmode_chartview[self.db.astrocfg['siderealmode']]
 		else:
-			td['bottomLeft1']=_("Tropical")
+			td['bottomLeft1'] = _("Tropical")
 			td['bottomLeft2'] = '%s: %s (%s) %s (%s)' % (_("Lunar Phase"),self.lunar_phase['sun_phase'],_("Sun"),self.lunar_phase['moon_phase'],_("Moon"))
 		td['bottomLeft3'] = '%s: %s' % (_("Lunar Phase"),self.dec2deg(self.lunar_phase['degrees']))
 		td['bottomLeft4'] = ''
@@ -4594,11 +4665,11 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 								#aspect grid dictionary
 								s="%02d%02d%02d"%(i,z,x)
 								astypes[s]=(i,x,z)
-								
+
 								if s not in retrogrid:
 									retrogrid[s]={}
 								retrogrid[s][d]=tmoddata.planets_retrograde[x]
-									
+
 								if s not in atgrid:
 									atgrid[s]={}
 								atgrid[s][d]=orb
@@ -4828,8 +4899,8 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 		out += '<circle cx="%s" cy="%s" r="%s" style="fill: none; stroke: %s; stroke-width: 1px; stroke-opacity: .6;"/>' % (r,r,r,self.colors['zodiac_transit_ring_3'])
 		return out
 
+	""" Draw degree ring """
 	def degreeRing( self , r ):
-		""" Draw degree ring """
 		out=''
 		for i in range(72):
 			offset = float(i*5) - self.houses_degree_ut[6]
@@ -4860,11 +4931,11 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 			out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: #F00; stroke-width: 1px; stroke-opacity:.9;"/>\n' %(x1, y1, x2, y2)
 		return out
 
+	""" Convert latitude and longitude floats to string """
 	def lat2str( self, coord ):
-		""" Floating latitude an longitude to string """
 		sign=self.label["north"]
 		if coord < 0.0:
-			sign=self.label["south"]
+			sign = self.label["south"]
 			coord = abs(coord)
 		deg = int(coord)
 		min = int( (float(coord) - deg) * 60 )
@@ -4872,41 +4943,42 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 		return "%s°%s'%s\" %s" % (deg,min,sec,sign)
 
 	def lon2str( self, coord ):
-		sign=self.label["east"]
+		sign = self.label["east"]
 		if coord < 0.0:
-			sign=self.label["west"]
+			sign = self.label["west"]
 			coord = abs(coord)
 		deg = int(coord)
 		min = int( (float(coord) - deg) * 60 )
 		sec = int( round( float( ( (float(coord) - deg) * 60 ) - min) * 60.0 ) )
 		return "%s°%s'%s\" %s" % (deg,min,sec,sign)
 
+	"""
+		Convert decimal hour to minutes and seconds
+		corrected for rounding error in case of repeating decimal
+	"""
 	def decHour( self , input ):
-		""" decimal hour to minutes and seconds
-			corrected for rounding error in case of repeating decimal
-		"""
 		total= int(input * 3600 + 0.5)
 		m, s = divmod(total, 60)
 		h, m = divmod(m, 60)
 		return [h,m,s]
 
+	""" join hour, minutes, seconds, timezone integere to hour float """
 	def decHourJoin( self, inH, inM, inS ):
-		""" join hour, minutes, seconds, timezone integere to hour float """
 		dh = float(inH)
 		dm = float(inM)/60
 		ds = float(inS)/3600
 		output = dh + dm + ds
 		return output
 
+	""" Convert datetime offset to hours as float"""
 	def offsetToTz( self, dtoffset ):
-		""" Datetime offset to float in hours """
 		dh = float(dtoffset.days * 24)
 		sh = float(dtoffset.seconds / 3600.0)
 		output = dh + sh
 		return output
 
+	""" Decimal timezone string """
 	def decTzStr( self, tz ):
-		""" Decimal timezone string """
 		if tz > 0:
 			h = int(tz)
 			m = int((float(tz)-float(h))*float(60))
@@ -4916,8 +4988,8 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 			m = int((float(tz)-float(h))*float(60))/-1
 			return " [-%(#1)02d:%(#2)02d]" % {'#1':h/-1,'#2':m}
 
+	""" Degree difference """
 	def degreeDiff( self, a ,b ):
-		""" Degree difference """
 		out=float()
 		if a > b:
 			out=a-b
@@ -4927,8 +4999,8 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 			out=360.0-out
 		return out
 
+	""" Decimal to degrees (a°b'c") """
 	def dec2deg( self, dec, type="3" ):
-		""" Decimal to degrees (a°b'c") """
 		dec=float(dec)
 		a=int(dec)
 		a_new=(dec-float(a)) * 60.0
@@ -4943,8 +5015,8 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 			out = '%(#1)02d&#176;' % {'#1':a}
 		return str(out)
 
+	""" draw svg aspects: ring, aspect ring, degreeA degreeB """
 	def drawAspect( self, r, ar, degA, degB, color ):
-		""" draw svg aspects: ring, aspect ring, degreeA degreeB """
 		offset = (int(self.houses_degree_ut[6]) / -1) + int(degA)
 		x1 = self.sliceToX( 0 , ar , offset ) + (r-ar)
 		y1 = self.sliceToY( 0 , ar , offset ) + (r-ar)
@@ -5251,7 +5323,7 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 					t_planets_degut[self.t_planets_degree_ut[i]]=i
 			t_keys = list(t_planets_degut.keys())
 			t_keys.sort()
-			# grab closely grouped planets
+			#grab closely grouped planets
 			groups=[]
 			in_group=False
 			for e in range(len(t_keys)):
@@ -5619,58 +5691,58 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 		return out
 
 	def makeLegend( self ):
-		out = '<g transform="translate(632,256)">\n'
+		out = '<g transform="translate(624,256)">\n'
 		out = out + '<text x="0" y="0" style="fill:#000000; font-size: 12px;">'
 		signs = _('Zodiac signs:')
 		out = out + signs + '</text>\n'
-		out = out + '<g transform="translate(0,4)">\n'
+		out = out + '<g transform="translate(8,8)">\n'
 		out = out + '<use transform="scale(0.3)" xlink:href="#'+self.zodiac[0]+'" />\n'
 		out = out + '</g>\n'
-		out = out + '<text x="12" y="12" style="fill:#482900; font-size: 10px;"> Aries</text>\n'
-		out = out + '<g transform="translate(0,16)">\n'
+		out = out + '<text x="20" y="16" style="fill:#482900; font-size: 10px;"> Aries</text>\n'
+		out = out + '<g transform="translate(8,20)">\n'
 		out = out + '<use transform="scale(0.3)" xlink:href="#'+self.zodiac[1]+'" />\n'
 		out = out + '</g>\n'
-		out = out + '<text x="12" y="24" style="fill:#6b3d00; font-size: 10px;"> Taurus</text>\n'
-		out = out + '<g transform="translate(0,28)">\n'
+		out = out + '<text x="20" y="28" style="fill:#6b3d00; font-size: 10px;"> Taurus</text>\n'
+		out = out + '<g transform="translate(8,32)">\n'
 		out = out + '<use transform="scale(0.3)" xlink:href="#'+self.zodiac[2]+'" />\n'
 		out = out + '</g>\n'
-		out = out + '<text x="12" y="36" style="fill:#5995e7; font-size: 10px;"> Gemini</text>\n'
-		out = out + '<g transform="translate(0,40)">\n'
+		out = out + '<text x="20" y="40" style="fill:#5995e7; font-size: 10px;"> Gemini</text>\n'
+		out = out + '<g transform="translate(8,44)">\n'
 		out = out + '<use transform="scale(0.3)" xlink:href="#'+self.zodiac[3]+'" />\n'
 		out = out + '</g>\n'
-		out = out + '<text x="12" y="48" style="fill:#2b4972; font-size: 10px;"> Cancer</text>\n'
-		out = out + '<g transform="translate(0,52)">\n'
+		out = out + '<text x="20" y="52" style="fill:#2b4972; font-size: 10px;"> Cancer</text>\n'
+		out = out + '<g transform="translate(8,56)">\n'
 		out = out + '<use transform="scale(0.3)" xlink:href="#'+self.zodiac[4]+'" />\n'
 		out = out + '</g>\n'
-		out = out + '<text x="12" y="60" style="fill:#c54100; font-size: 10px;"> Leo</text>\n'
-		out = out + '<g transform="translate(0,64)">\n'
+		out = out + '<text x="20" y="64" style="fill:#c54100; font-size: 10px;"> Leo</text>\n'
+		out = out + '<g transform="translate(8,68)">\n'
 		out = out + '<use transform="scale(0.3)" xlink:href="#'+self.zodiac[5]+'" />\n'
 		out = out + '</g>\n'
-		out = out + '<text x="12" y="72" style="fill:#2b286f; font-size: 10px;"> Virgo</text>\n'
-		out = out + '<g transform="translate(0,76)">\n'
+		out = out + '<text x="20" y="76" style="fill:#2b286f; font-size: 10px;"> Virgo</text>\n'
+		out = out + '<g transform="translate(8,80)">\n'
 		out = out + '<use transform="scale(0.3)" xlink:href="#'+self.zodiac[6]+'" />\n'
 		out = out + '</g>\n'
-		out = out + '<text x="12" y="84" style="fill:#69acf1; font-size: 10px;"> Libra</text>\n'
-		out = out + '<g transform="translate(0,88)">\n'
+		out = out + '<text x="20" y="88" style="fill:#69acf1; font-size: 10px;"> Libra</text>\n'
+		out = out + '<g transform="translate(8,92)">\n'
 		out = out + '<use transform="scale(0.3)" xlink:href="#'+self.zodiac[7]+'" />\n'
 		out = out + '</g>\n'
-		out = out + '<text x="12" y="96" style="fill:#ffd237; font-size: 10px;"> Scorpio</text>\n'
-		out = out + '<g transform="translate(0,100)">\n'
+		out = out + '<text x="20" y="100" style="fill:#ffd237; font-size: 10px;"> Scorpio</text>\n'
+		out = out + '<g transform="translate(8,104)">\n'
 		out = out + '<use transform="scale(0.3)" xlink:href="#'+self.zodiac[8]+'" />\n'
 		out = out + '</g>\n'
-		out = out + '<text x="12" y="108" style="fill:#ff7200; font-size: 10px;"> Sagittarius</text>\n'
-		out = out + '<g transform="translate(0,112)">\n'
+		out = out + '<text x="20" y="112" style="fill:#ff7200; font-size: 10px;"> Sagittarius</text>\n'
+		out = out + '<g transform="translate(8,116)">\n'
 		out = out + '<use transform="scale(0.3)" xlink:href="#'+self.zodiac[9]+'" />\n'
 		out = out + '</g>\n'
-		out = out + '<text x="12" y="120" style="fill:#863c00; font-size: 10px;"> Capricorn</text>\n'
-		out = out + '<g transform="translate(0,124)">\n'
+		out = out + '<text x="20" y="124" style="fill:#863c00; font-size: 10px;"> Capricorn</text>\n'
+		out = out + '<g transform="translate(8,128)">\n'
 		out = out + '<use transform="scale(0.3)" xlink:href="#'+self.zodiac[10]+'" />\n'
 		out = out + '</g>\n'
-		out = out + '<text x="12" y="132" style="fill:#4f0377; font-size: 10px;"> Aquarius</text>\n'
-		out = out + '<g transform="translate(0,136)">\n'
+		out = out + '<text x="20" y="136" style="fill:#4f0377; font-size: 10px;"> Aquarius</text>\n'
+		out = out + '<g transform="translate(8,140)">\n'
 		out = out + '<use transform="scale(0.3)" xlink:href="#'+self.zodiac[11]+'" />\n'
 		out = out + '</g>\n'
-		out = out + '<text x="12" y="144" style="fill:#6cbfff; font-size: 10px;"> Pisces</text>\n'
+		out = out + '<text x="20" y="148" style="fill:#6cbfff; font-size: 10px;"> Pisces</text>\n'
 		out = out + '</g>\n'
 		return out
 
@@ -5705,7 +5777,10 @@ dt_utc.year, dt_utc.month, dt_utc.day,self.decHourJoin(dt_utc.hour,dt_utc.minute
 		return out
 
 	def makeHousesGrid( self ):
-		out = '<g transform="translate(624,-40)">'
+		set_x = '624'
+		if len(self.label['cusp']) < 8:
+			set_x = '608'
+		out = '<g transform="translate({0},-40)">'.format(set_x)
 		li=10
 		for i in range(12):
 			if i < 9:

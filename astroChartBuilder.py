@@ -3878,7 +3878,7 @@ class AstroWindow(Gtk.ApplicationWindow):
 		about = Gtk.AboutDialog(transient_for = self, modal = True)
 		about.set_logo(GdkPixbuf.Pixbuf.new_from_file(app.cfg.about));
 		about.connect("response", lambda w,e: about.destroy())
-		about.connect("close", lambda w,e: about.destroy())
+		about.connect("close", about.close)
 		about.set_program_name("Gtk+ OpenAstro.org - Open Source Astrology")
 		about.set_size_request(480, -1)
 		about.set_version("Version " + app.cfg.version)

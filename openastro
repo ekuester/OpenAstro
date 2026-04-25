@@ -101,7 +101,7 @@ LANGUAGES_LABEL={
 	"sv":"svenska",
 	"uk":"українська мова",
 	"zh_TW":"正體字"	}
-
+""" https://docs.python.org/3/library/gettext.html """
 TDomain = os.path.join(DATADIR, 'locale')
 if not LOCAL:
 	TDomain = os.path.dirname(DATADIR)
@@ -3765,7 +3765,7 @@ class mainWindow:
 		about = Gtk.AboutDialog(transient_for = self.window, modal = True)
 		about.set_logo(GdkPixbuf.Pixbuf.new_from_file(cfg.about));
 		about.connect("response", lambda w,e: about.destroy())				
-		about.connect("close", lambda w,e: about.destroy())
+		about.connect("close", about.close)
 		about.set_program_name("Gtk+ OpenAstro.org - Open Source Astrology")
 		about.set_size_request(480, -1)
 		about.set_version("Version " + cfg.version)
