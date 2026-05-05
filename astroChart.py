@@ -324,7 +324,7 @@ if "--local" in sys.argv:
 RADIUS = 240
 OFFSET = 64
 RATIO = math.sqrt(2)
-VERSION = "1.1.110"
+VERSION = "1.1.111"
 
 APPLICATION_ID = "org.openastro.AstroApp"
 #maximal number of items of history
@@ -2269,7 +2269,9 @@ class AstroWindow(Gtk.ApplicationWindow):
 			# cities
 			self.cities = Gtk.DropDown()
 			grid.attach(self.cities, 3, 3, 1, 1)
-			#self.cities.set_wrap_width(2) 
+			self.cities.set_enable_search(True)
+			expr = Gtk.PropertyExpression.new(Gtk.StringObject(), None, 'string')
+			self.cities.set_expression(expression=expr)
 			self.cities.connect('notify::selected-item', self.eventDataChangedCitybox)
 			# add search in database
 			label = Gtk.Label(label=_("Search City")+":")
@@ -3517,7 +3519,9 @@ class AstroWindow(Gtk.ApplicationWindow):
 			# cities
 			self.cities = Gtk.DropDown()
 			grid.attach(self.cities, 3, 0, 1, 1)
-			#self.cities.set_wrap_width(2) 
+			self.cities.set_enable_search(True)
+			expr = Gtk.PropertyExpression.new(Gtk.StringObject(), None, 'string')
+			self.cities.set_expression(expression=expr)
 			self.cities.connect('notify::selected-item', self.eventDataChangedCitybox)
 			self.continents.connect('notify::selected-item', self.eventDataChangedContbox)
 			self.continents.set_selected(activecont)
@@ -4074,8 +4078,9 @@ class AstroApplication(Gtk.Application):
 			**kwargs,
 		)
 		display = Gdk.Display.get_default()
-		monitor = display.get_primary_monitor()
-		geometry = monitor.get_geometry()
+		monitors = display.get_monitors()
+		#take default monitor
+		geometry = monitors[0].get_geometry()
 		self.screen_width = geometry.width
 		self.screen_height = geometry.height
 		#calculate available screen size, correct dimensions

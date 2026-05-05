@@ -1,8 +1,8 @@
 %global revision 1
-%global alias openastro.org
+%global alias openastro
 
-Name:           AstroChart
-Version:        1.1.110
+Name:           OpenAstro
+Version:        1.1.111
 Release:        1.11
 Summary:        Astrology charts
 License:        GPLv3+
@@ -22,9 +22,9 @@ The open source astrology program openastro.org by Pelle van der Scheer in enhan
 # applies patch automatically
 %autosetup -n %{name}-%{version}
 # change desktop file
-rm -fv openastro.desktop
+rm -fv %{alias}.desktop
 # write desktop file
-cat > ./astrochart.desktop <<EOF
+cat > ./%{alias}.desktop <<EOF
 [Desktop Entry]
 Encoding=UTF-8
 Version=1.0
@@ -48,8 +48,12 @@ EOF
 %pyproject_install
 cp -a locale $RPM_BUILD_ROOT%{_datadir}/
 rm -fr $RPM_BUILD_ROOT%{_datadir}/%{alias}/locale
-cp -a data/*.* $RPM_BUILD_ROOT%{_datadir}/%{alias}/
-cp -a 'about.xpm' COMMENTS LICENSE $RPM_BUILD_ROOT%{_datadir}/%{alias}/
+cp -a data/*.* $RPM_BUILD_ROOT%{_datadir}/%{alias}.org/
+#rm -fv openastro.desktop
+cp -a openastro.desktop $RPM_BUILD_ROOT%{_datadir}/applications/astrochart.desktop
+cp -a 'about.xpm' COMMENTS LICENSE $RPM_BUILD_ROOT%{_datadir}/%{alias}.org/
+rm -f $RPM_BUILD_ROOT%{_datadir}/applications/openastro.desktop
+rm -f $RPM_BUILD_ROOT%{_bindir}/%{alias}
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/pixmaps/
 install -m 644 icons/openastro.svg $RPM_BUILD_ROOT%{_datadir}/pixmaps/
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/swisseph/
@@ -57,20 +61,22 @@ install -m 644 swisseph/*.* $RPM_BUILD_ROOT%{_datadir}/swisseph/
 
 %clean
 rm -rf $RPM_BUILD_ROOT
-rm -rf ${RPM_BUILD_DIR}/%{alias}-%{version}
+rm -rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %license LICENSE
 %doc README.md
 %{_bindir}/astroChart.py
 %{_datadir}/applications/astrochart.desktop
-%{_datadir}/openastro.org/*
+%{_datadir}/%{alias}.org/*
 %{_datadir}/pixmaps/*.svg
 %{_datadir}/swisseph/*.*
 %{_datadir}/locale/*
 %{python3_sitelib}/*
 
 %changelog
+* Sun May  3 2026 Erich Kuester <erich.kuester«arcor.de> - 1.1.111-1
+- openastro final for Fedora 44 and python 3.14
 * Fri Apr 24 2026 Erich Kuester <erich.kuester«arcor.de> - 1.1.110-1
-- continuation of openastro for Fedra 43 and python 3.14
+- continuation of openastro for Fedora 43 and python 3.14
 
